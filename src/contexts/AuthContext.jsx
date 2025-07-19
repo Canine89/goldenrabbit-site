@@ -76,36 +76,14 @@ export const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async (userId, currentUser = null) => {
     try {
-      // 관리자 이메일 확인
-      const adminEmails = ['hgpark@goldenrabbit.co.kr', 'hwchoi@goldenrabbit.co.kr', 'ohhc@goldenrabbit.co.kr']
       const userEmail = currentUser?.email || user?.email
-      const shouldBeAdmin = adminEmails.includes(userEmail)
 
-      // 관리자 사용자의 경우 임시 프로필 생성 (RLS 정책 우회)
-      if (shouldBeAdmin) {
-        const tempProfile = {
-          id: userId,
-          email: userEmail,
-          username: userEmail,
-          role: 'admin',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-        
-        setProfile(tempProfile)
-        return
-      }
-
-      // 일반 사용자의 경우 데이터베이스에서 프로필 조회
+      // 데이터베이스에서 프로필 조회
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single()
-
-      if (error) {
-        console.error('프로필 조회 중 오류:', error)
-      }
 
       if (error && error.code === 'PGRST116') {
         // 프로필이 없으면 생성
@@ -113,7 +91,7 @@ export const AuthProvider = ({ children }) => {
           id: userId,
           email: userEmail,
           username: userEmail,
-          role: shouldBeAdmin ? 'admin' : 'customer'
+          role: 'customer' // 기본값은 일반 사용자
         }
         
         const { data: insertData, error: insertError } = await supabase
@@ -136,24 +114,7 @@ export const AuthProvider = ({ children }) => {
         return
       }
 
-      // 프로필이 있는 경우 - 관리자 권한 확인 및 자동 업데이트
-      if (data && shouldBeAdmin && data.role !== 'admin') {
-        const { data: updatedProfile, error: updateError } = await supabase
-          .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', userId)
-          .select()
-          .single()
-        
-        if (updateError) {
-          console.error('관리자 권한 업데이트 오류:', updateError)
-          setProfile(data)
-        } else {
-          setProfile(updatedProfile)
-        }
-      } else {
-        setProfile(data)
-      }
+      setProfile(data)
     } catch (error) {
       console.error('프로필 조회 중 오류:', error)
     }

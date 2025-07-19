@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import DOMPurify from 'dompurify'
 
 export default function RichTextEditor({ value = '', onChange, placeholder = '내용을 입력하세요...' }) {
   const [isMarkdownMode, setIsMarkdownMode] = useState(false)
@@ -16,7 +17,8 @@ export default function RichTextEditor({ value = '', onChange, placeholder = '�
     setContent(value)
     // contentEditable도 업데이트
     if (contentEditableRef.current && previewMode) {
-      contentEditableRef.current.innerHTML = value || '<p>내용을 입력하세요...</p>'
+      const sanitizedValue = DOMPurify.sanitize(value || '<p>내용을 입력하세요...</p>')
+      contentEditableRef.current.innerHTML = sanitizedValue
     }
   }, [value, previewMode])
 

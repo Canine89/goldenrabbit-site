@@ -22,15 +22,31 @@ const ImageUpload = ({
       const file = event.target.files[0]
       if (!file) return
 
-      // 파일 타입 검증
-      if (!file.type.startsWith('image/')) {
-        setUploadError('이미지 파일만 업로드 가능합니다.')
+      // 허용된 이미지 타입 검증
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+      if (!allowedTypes.includes(file.type)) {
+        setUploadError('지원되는 이미지 형식: JPEG, PNG, GIF, WebP')
+        return
+      }
+
+      // 파일 확장자 검증 (MIME 타입과 확장자 일치 확인)
+      const fileExtension = file.name.split('.').pop().toLowerCase()
+      const validExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+      if (!validExtensions.includes(fileExtension)) {
+        setUploadError('올바른 이미지 파일 확장자를 사용해주세요.')
         return
       }
 
       // 파일 크기 검증 (5MB 제한)
       if (file.size > 5 * 1024 * 1024) {
         setUploadError('파일 크기는 5MB를 초과할 수 없습니다.')
+        return
+      }
+
+      // 파일명 검증 (특수문자 제거)
+      const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9가-힣._-]/g, '')
+      if (sanitizedFileName !== file.name) {
+        setUploadError('파일명에 특수문자가 포함되어 있습니다.')
         return
       }
 
@@ -100,6 +116,21 @@ const ImageUpload = ({
   const handleUrlChange = (event) => {
     let url = event.target.value.trim()
     
+    // URL 기본 검증
+    if (url && !isValidUrl(url)) {
+      setUploadError('올바른 URL 형식을 입력해주세요.')
+      return
+    }
+    
+    // URL이 있는 경우에만 검증
+    if (url && !isAllowedDomain(url)) {
+      setUploadError('허용되지 않은 도메인입니다. 신뢰할 수 있는 이미지 호스팅 서비스를 사용해주세요.')
+      return
+    }
+    
+    // 에러 메시지 초기화
+    setUploadError('')
+    
     // Google Drive 링크 자동 변환
     url = convertGoogleDriveUrl(url)
     
@@ -108,6 +139,43 @@ const ImageUpload = ({
     setCurrentUrlIndex(0)
     
     onChange(url)
+  }
+
+  const isValidUrl = (string) => {
+    try {
+      new URL(string)
+      return string.startsWith('http://') || string.startsWith('https://')
+    } catch (_) {
+      return false
+    }
+  }
+
+  const isAllowedDomain = (url) => {
+    try {
+      const urlObj = new URL(url)
+      const allowedDomains = [
+        'drive.google.com',
+        'googleusercontent.com',
+        'images.unsplash.com',
+        'unsplash.com',
+        'pixabay.com',
+        'pexels.com',
+        'imgur.com',
+        'github.com',
+        'githubusercontent.com',
+        'cloudinary.com',
+        'amazonaws.com',
+        'cloudfront.net',
+        'supabase.co',
+        'goldenrabbit.co.kr'
+      ]
+      
+      return allowedDomains.some(domain => 
+        urlObj.hostname === domain || urlObj.hostname.endsWith('.' + domain)
+      )
+    } catch (_) {
+      return false
+    }
   }
 
   const handleImageError = () => {

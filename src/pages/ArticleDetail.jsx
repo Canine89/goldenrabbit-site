@@ -5,6 +5,7 @@ import Container from '../components/ui/Container'
 import Section from '../components/ui/Section'
 import Badge from '../components/ui/Badge'
 import Loading from '../components/ui/Loading'
+import DOMPurify from 'dompurify'
 
 export default function ArticleDetail() {
   const { id } = useParams()
@@ -81,11 +82,18 @@ export default function ArticleDetail() {
       }
     )
     
+    // HTML을 안전하게 정화
+    const sanitizedContent = DOMPurify.sanitize(processedContent, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 's', 'a', 'img', 'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span'],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'style', 'target', 'rel', 'crossorigin', 'referrerpolicy'],
+      ALLOW_DATA_ATTR: false
+    })
+    
     // Notion 스타일의 HTML 콘텐츠 렌더링
     return (
       <div 
         className="notion-content max-w-none text-neutral-800 leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: processedContent }}
+        dangerouslySetInnerHTML={{ __html: sanitizedContent }}
         style={{
           fontSize: '16px',
           lineHeight: '1.7',
