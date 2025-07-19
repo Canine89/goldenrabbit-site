@@ -6,9 +6,6 @@ export default function DocsImporter({ onBookInfoExtracted }) {
   const [documentUrl, setDocumentUrl] = useState('')
   const { loading, error, extractBookInfoSimple, clearError } = useGoogleDocs()
   const { isAdmin } = useAuth()
-  
-  // Google API 환경변수 확인
-  const isGoogleApiAvailable = import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_SECRET
 
   const handleImport = async () => {
     if (!documentUrl.trim()) {
@@ -47,11 +44,8 @@ export default function DocsImporter({ onBookInfoExtracted }) {
     return url.includes('docs.google.com/document/d/')
   }
 
-  // Google API 설정 및 관리자 권한 확인
-  const canShowDocsImporter = isGoogleApiAvailable && isAdmin()
-  
-  // 관리자가 아니거나 API가 설정되지 않은 경우 컴포넌트 숨김
-  if (!canShowDocsImporter) {
+  // 관리자 권한만 확인
+  if (!isAdmin()) {
     return null
   }
 
