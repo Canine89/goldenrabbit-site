@@ -115,6 +115,38 @@ export default function UserManagement() {
     }
   }
 
+  const handleUpdateUserRole = async (user) => {
+    const currentRole = users.find(u => u.id === user.id)?.role || 'customer'
+    const newRole = user.role
+    
+    if (currentRole === newRole) {
+      alert('변경된 내용이 없습니다.')
+      return
+    }
+
+    const roleText = newRole === 'admin' ? '관리자' : '일반 사용자'
+    
+    if (!confirm(`"${user.email}" 사용자의 역할을 "${roleText}"로 변경하시겠습니까?`)) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      alert(`사용자 역할이 "${roleText}"로 변경되었습니다.`)
+      setShowEditModal(false)
+      setEditingUser(null)
+      fetchUsers()
+    } catch (error) {
+      alert(`역할 변경 중 오류가 발생했습니다: ${error.message}`)
+    }
+  }
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('ko-KR')
   }
@@ -331,6 +363,78 @@ export default function UserManagement() {
           </div>
         )}
       </div>
+
+      {/* 사용자 수정 모달 */}
+      {showEditModal && editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-neutral-900">사용자 정보 수정</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="text-neutral-500 hover:text-neutral-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              {/* 사용자 정보 표시 */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">이메일</label>
+                <div className="text-sm text-neutral-900 bg-neutral-50 px-3 py-2 rounded border">
+                  {editingUser.email}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">이름</label>
+                <div className="text-sm text-neutral-900 bg-neutral-50 px-3 py-2 rounded border">
+                  {editingUser.full_name || editingUser.username || '이름 없음'}
+                </div>
+              </div>
+
+              {/* 역할 선택 */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">역할</label>
+                <select
+                  value={editingUser.role || 'customer'}
+                  onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
+                  className="w-full border border-neutral-300 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="customer">일반 사용자</option>
+                  <option value="admin">관리자</option>
+                </select>
+              </div>
+
+              {/* 가입일 */}
+              <div>
+                <label className="block text-sm font-medium text-neutral-700 mb-1">가입일</label>
+                <div className="text-sm text-neutral-900 bg-neutral-50 px-3 py-2 rounded border">
+                  {formatDate(editingUser.created_at)}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-4 py-2 text-neutral-600 hover:text-neutral-800 transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => handleUpdateUserRole(editingUser)}
+                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
