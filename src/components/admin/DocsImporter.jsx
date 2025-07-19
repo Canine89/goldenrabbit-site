@@ -1,12 +1,30 @@
 import { useState } from 'react'
 import { useGoogleDocs } from '../../hooks/useGoogleDocs'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function DocsImporter({ onBookInfoExtracted }) {
   const [documentUrl, setDocumentUrl] = useState('')
   const { loading, error, extractBookInfoSimple, clearError } = useGoogleDocs()
+  const { user } = useAuth()
   
   // Google API 환경변수 확인
   const isGoogleApiAvailable = import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_SECRET
+  
+  // 보도자료 접근 권한 확인
+  const hasDocsAccess = (userEmail) => {
+    if (!userEmail) return false
+    
+    // 골든래빗 도메인 이메일 확인
+    const authorizedDomains = ['goldenrabbit.co.kr']
+    const authorizedEmails = [
+      'hgpark@goldenrabbit.co.kr',
+      'hwchoi@goldenrabbit.co.kr', 
+      'ohhc@goldenrabbit.co.kr'
+    ]
+    
+    return authorizedDomains.some(domain => userEmail.endsWith(`@${domain}`)) ||
+           authorizedEmails.includes(userEmail)
+  }
 
   const handleImport = async () => {
     if (!documentUrl.trim()) {
@@ -45,8 +63,11 @@ export default function DocsImporter({ onBookInfoExtracted }) {
     return url.includes('docs.google.com/document/d/')
   }
 
-  // Google API가 설정되지 않은 경우 컴포넌트 숨김
-  if (!isGoogleApiAvailable) {
+  // Google API 설정 및 사용자 권한 동시 확인
+  const canShowDocsImporter = isGoogleApiAvailable && hasDocsAccess(user?.email)
+  
+  // 권한이 없거나 API가 설정되지 않은 경우 컴포넌트 숨김
+  if (!canShowDocsImporter) {
     return null
   }
 
