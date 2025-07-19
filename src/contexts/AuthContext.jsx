@@ -250,30 +250,6 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  // 관리자 권한 강제 부여 함수 (디버깅용)
-  const forceAdminRole = async () => {
-    if (!user) {
-      return
-    }
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({ role: 'admin' })
-        .eq('id', user.id)
-        .select()
-        .single()
-      
-      if (error) {
-        console.error('권한 업데이트 오류:', error)
-        return
-      }
-      
-      setProfile(data)
-    } catch (error) {
-      console.error('관리자 권한 부여 실패:', error)
-    }
-  }
 
   const value = {
     user,
@@ -283,8 +259,7 @@ export const AuthProvider = ({ children }) => {
     signOut,
     isAdmin,
     fetchUserProfile,
-    updateUserRole,
-    forceAdminRole
+    updateUserRole
   }
 
 

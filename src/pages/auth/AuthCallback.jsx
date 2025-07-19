@@ -37,8 +37,6 @@ const AuthCallback = () => {
 
             if (insertError) {
               console.error('프로필 생성 오류:', insertError)
-            } else {
-              console.log('프로필 생성 완료:', profileData)
             }
           }
 

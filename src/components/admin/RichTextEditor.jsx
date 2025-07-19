@@ -208,7 +208,6 @@ export default function RichTextEditor({ value = '', onChange, placeholder = '�
     e.preventDefault()
     e.stopPropagation()
     
-    console.log('이미지 클릭됨:', imageElement)
     
     // 현재 이미지 크기 가져오기
     const computedStyle = window.getComputedStyle(imageElement)
@@ -256,7 +255,6 @@ export default function RichTextEditor({ value = '', onChange, placeholder = '�
     setSelectedImage(null)
     setCurrentImageWidth('')
     
-    console.log('✅ 이미지 크기 변경 완료:', newWidth + 'px')
   }
 
   // 팝업 닫기

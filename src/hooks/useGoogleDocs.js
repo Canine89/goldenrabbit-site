@@ -40,8 +40,6 @@ export const useGoogleDocs = () => {
       // 텍스트 파싱
       const bookInfo = parseBookInfoFromText(text)
       
-      console.log('파싱된 도서 정보:', bookInfo) // 디버깅용
-      console.log('원본 텍스트 (첫 500자):', text.substring(0, 500)) // 디버깅용
       
       return bookInfo
     } catch (err) {
@@ -116,21 +114,12 @@ export const useGoogleDocs = () => {
         author = author.replace(/[·•・]/g, '').trim()
         
         if (author && author.length > 0 && author.length < 50) {  // 너무 긴 경우 제외
-          console.log('저자 추출 성공:', author)
           bookInfo.author = author
           break
         }
       }
     }
     
-    if (!bookInfo.author) {
-      console.log('저자 추출 실패 - 패턴을 찾을 수 없음')
-      console.log('텍스트에서 "지은이" 검색:', text.includes('지은이'))
-      console.log('텍스트에서 "저자" 검색:', text.includes('저자'))
-      // 디버깅을 위해 텍스트의 일부분 출력
-      const relevantText = text.substring(0, 1000)
-      console.log('텍스트 샘플:', relevantText)
-    }
 
     // 가격 추출: 다양한 불릿 문자 패턴 시도 (콤마 포함)
     const pricePatterns = [
@@ -151,24 +140,12 @@ export const useGoogleDocs = () => {
         let priceNum = parseInt(priceStr.replace(/[^\d]/g, ''))
         
         if (priceNum && priceNum >= 5000 && priceNum <= 100000) {
-          console.log('가격 추출 성공:', priceNum, '원문:', priceMatch[0])
           bookInfo.price = priceNum.toString()
           break
         }
       }
     }
     
-    if (!bookInfo.price) {
-      console.log('가격 추출 실패 - 패턴을 찾을 수 없음')
-      console.log('텍스트에서 "정가" 검색:', text.includes('정가'))
-      console.log('텍스트에서 "가격" 검색:', text.includes('가격'))
-      console.log('텍스트에서 "원" 검색:', text.includes('원'))
-      // 숫자 패턴 확인
-      const numbers = text.match(/\d{4,6}/g)
-      if (numbers) {
-        console.log('문서에서 발견된 4-6자리 숫자들:', numbers.slice(0, 5))
-      }
-    }
 
     // ISBN 추출 (979-11-94383-35-2 패턴)
     const isbnPatterns = [
@@ -306,23 +283,12 @@ export const useGoogleDocs = () => {
           .trim()
         
         if (toc.length > 20) {
-          console.log('목차 추출 성공:', toc.substring(0, 100) + '...')
           bookInfo.table_of_contents = toc
           break
         }
       }
     }
     
-    if (!bookInfo.table_of_contents) {
-      console.log('목차 추출 실패 - 패턴을 찾을 수 없음')
-      console.log('텍스트에서 "목차" 검색:', text.includes('목차'))
-      // 목차 주변 텍스트 확인
-      const tocIndex = text.indexOf('목차')
-      if (tocIndex > -1) {
-        const surrounding = text.substring(Math.max(0, tocIndex - 50), tocIndex + 200)
-        console.log('목차 주변 텍스트:', surrounding)
-      }
-    }
 
     // 카테고리 추정
     const categoryKeywords = {

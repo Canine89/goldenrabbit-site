@@ -131,33 +131,20 @@ export default function UserManagement() {
     }
 
     try {
-      console.log('역할 변경 시도:', {
-        userId: user.id,
-        userEmail: user.email,
-        currentRole,
-        newRole,
-        userObject: user
-      })
-
       const { data, error } = await supabase
         .from('profiles')
         .update({ role: newRole })
         .eq('id', user.id)
         .select()
 
-      console.log('Supabase UPDATE 응답:', { data, error })
-
       if (error) {
-        console.error('Supabase 업데이트 에러:', error)
         throw error
       }
 
       if (data && data.length > 0) {
-        console.log('업데이트 성공, 변경된 데이터:', data[0])
         alert(`사용자 역할이 "${roleText}"로 변경되었습니다.`)
       } else {
-        console.warn('업데이트는 성공했지만 반환된 데이터가 없습니다.')
-        alert('역할 변경 요청이 처리되었습니다. 잠시 후 새로고침해주세요.')
+        alert('역할 변경 요청이 처리되었습니다.')
       }
 
       setShowEditModal(false)
@@ -165,27 +152,8 @@ export default function UserManagement() {
       
       // 업데이트 후 사용자 목록 새로고침
       await fetchUsers()
-      
-      // 추가 검증: 실제로 변경되었는지 확인
-      setTimeout(async () => {
-        const { data: verifyData, error: verifyError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single()
-        
-        if (verifyError) {
-          console.error('검증 조회 오류:', verifyError)
-        } else {
-          console.log('변경 후 실제 역할:', verifyData?.role)
-          if (verifyData?.role !== newRole) {
-            alert('주의: 역할 변경이 완전히 반영되지 않았을 수 있습니다. 관리자에게 문의하세요.')
-          }
-        }
-      }, 1000)
 
     } catch (error) {
-      console.error('역할 변경 오류 상세:', error)
       alert(`역할 변경 중 오류가 발생했습니다: ${error.message}`)
     }
   }

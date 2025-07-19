@@ -36,24 +36,18 @@ export default function ArticleManagement() {
       setLoading(true)
       setError(null)
       
-      console.log('Fetching articles...')
       const { data, error } = await supabase
         .from('articles')
         .select('*')
         .order('created_at', { ascending: false })
       
-      console.log('Articles response:', { data, error })
-      
       if (error) {
         console.error('Articles fetch error:', error)
         throw error
       }
-      
-      console.log('Articles data:', data)
       setArticles(data || [])
       setFilteredArticles(data || [])
     } catch (error) {
-      console.error('Articles fetch catch error:', error)
       setError(`아티클 목록을 불러오는데 실패했습니다: ${error.message}`)
     } finally {
       setLoading(false)

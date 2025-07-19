@@ -143,7 +143,6 @@ export default function BookManagement() {
 
   // 보도자료에서 추출된 도서 정보 처리
   const handleBookInfoExtracted = (extractedInfo) => {
-    console.log('추출된 정보:', extractedInfo) // 디버깅용
     
     setFormData(prevData => ({
       ...prevData,

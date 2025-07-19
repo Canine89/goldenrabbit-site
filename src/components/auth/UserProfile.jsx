@@ -15,13 +15,10 @@ const UserProfile = () => {
     setIsLoggingOut(true)
     setIsOpen(false)
     
-    console.log('UserProfile: 로그아웃 버튼 클릭')
-    
     try {
       await signOut()
       // signOut에서 페이지 새로고침 처리
     } catch (error) {
-      console.error('UserProfile 로그아웃 실패:', error)
       // 오류가 있어도 강제 새로고침
       window.location.reload()
     }
