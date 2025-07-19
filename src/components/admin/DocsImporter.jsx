@@ -4,6 +4,9 @@ import { useGoogleDocs } from '../../hooks/useGoogleDocs'
 export default function DocsImporter({ onBookInfoExtracted }) {
   const [documentUrl, setDocumentUrl] = useState('')
   const { loading, error, extractBookInfoSimple, clearError } = useGoogleDocs()
+  
+  // Google API 환경변수 확인
+  const isGoogleApiAvailable = import.meta.env.VITE_GOOGLE_CLIENT_ID && import.meta.env.VITE_GOOGLE_CLIENT_SECRET
 
   const handleImport = async () => {
     if (!documentUrl.trim()) {
@@ -40,6 +43,11 @@ export default function DocsImporter({ onBookInfoExtracted }) {
 
   const isValidGoogleDocsUrl = (url) => {
     return url.includes('docs.google.com/document/d/')
+  }
+
+  // Google API가 설정되지 않은 경우 컴포넌트 숨김
+  if (!isGoogleApiAvailable) {
+    return null
   }
 
   return (

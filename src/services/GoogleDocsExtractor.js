@@ -15,11 +15,20 @@ class GoogleDocsExtractor {
   // OAuth 2.0 인증 초기화
   async initializeAuth() {
     try {
+      // 현재 환경에 따라 리디렉션 URL 동적 설정
+      const getRedirectUrl = () => {
+        if (import.meta.env.DEV) {
+          return "http://localhost:3000/oauth2callback"
+        }
+        // 배포 환경에서는 현재 도메인 사용
+        return `${window.location.origin}/oauth2callback`
+      }
+
       const clientSecrets = {
         web: {
           client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
           client_secret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET || "",
-          redirect_uris: ["http://localhost:3000/oauth2callback"]
+          redirect_uris: [getRedirectUrl()]
         }
       }
 
