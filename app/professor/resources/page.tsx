@@ -23,6 +23,10 @@ interface ProfessorResource {
   } | null
 }
 
+interface SupabaseResource extends Omit<ProfessorResource, 'books'> {
+  books: { title: string; author: string; category: string }[] | null
+}
+
 export default function ProfessorResourcesPage() {
   const [resources, setResources] = useState<ProfessorResource[]>([])
   const [filteredResources, setFilteredResources] = useState<ProfessorResource[]>([])
@@ -68,8 +72,14 @@ export default function ProfessorResourcesPage() {
 
       if (error) throw error
       
-      setResources(data || [])
-      setFilteredResources(data || [])
+      // Supabase relation 결과를 우리 인터페이스에 맞게 변환
+      const transformedData: ProfessorResource[] = (data as SupabaseResource[] || []).map(item => ({
+        ...item,
+        books: item.books && item.books.length > 0 ? item.books[0] : null
+      }))
+      
+      setResources(transformedData)
+      setFilteredResources(transformedData)
     } catch (error: any) {
       setError(`자료를 불러오는데 실패했습니다: ${error.message}`)
     } finally {
