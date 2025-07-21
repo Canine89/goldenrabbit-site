@@ -7,6 +7,7 @@ import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Section from '../components/ui/Section'
 import Container from '../components/ui/Container'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Home() {
   const [featuredBooks, setFeaturedBooks] = useState([])

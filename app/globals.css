@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Color System Variables */
+:root {
+  /* 딥 골드 - Primary Brand Color */
+  --color-primary-50: #fffbf5;
+  --color-primary-100: #fff5e6;
+  --color-primary-200: #ffe4b5;
+  --color-primary-300: #ffd084;
+  --color-primary-400: #ffb84d;
+  --color-primary-500: #D4A574; /* Deep Gold - Main */
+  --color-primary-600: #B8935F;
+  --color-primary-700: #9A7A4F;
+  --color-primary-800: #7D6340;
+  --color-primary-900: #5F4A2F;
+  
+  /* 블루 - Dodger Blue (#1E90FF) */
+  --color-blue-50: #e6f2ff;
+  --color-blue-100: #b3d9ff;
+  --color-blue-200: #80c1ff;
+  --color-blue-300: #4da8ff;
+  --color-blue-400: #2696ff;
+  --color-blue-500: #1E90FF; /* Dodger Blue - Main */
+  --color-blue-600: #0073e6;
+  --color-blue-700: #005bb3;
+  --color-blue-800: #004380;
+  --color-blue-900: #002b4d;
+  
+  /* 그린 - Jade Green (#00A86B) */
+  --color-green-50: #e6f7f1;
+  --color-green-100: #b3e6d5;
+  --color-green-200: #80d5b9;
+  --color-green-300: #4dc49d;
+  --color-green-400: #26b684;
+  --color-green-500: #00A86B; /* Jade Green - Main */
+  --color-green-600: #008a59;
+  --color-green-700: #006b46;
+  --color-green-800: #004d33;
+  --color-green-900: #002e1f;
+  
+  /* 중성 색상 */
+  --color-black: #0A0A0A;
+  --color-gray-900: #1a1a1a;
+  --color-gray-800: #333333;
+  --color-gray-700: #4d4d4d;
+  --color-gray-600: #666666;
+  --color-gray-500: #808080;
+  --color-gray-400: #999999;
+  --color-gray-300: #b3b3b3;
+  --color-gray-200: #cccccc;
+  --color-gray-100: #e6e6e6;
+  --color-gray-50: #f5f5f5;
+  --color-white: #FFFFFF;
+  
+  /* 시맨틱 색상 */
+  --color-success: var(--color-green-500);
+  --color-info: var(--color-blue-500);
+  --color-warning: var(--color-primary-400);
+  --color-danger: #dc3545;
+}
+
+/* Custom animations */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out;
+}
+
+/* Modern Color Utility Classes */
+
+/* Primary Colors (Deep Gold) */
+.text-primary-500 { color: var(--color-primary-500); }
+.text-primary-600 { color: var(--color-primary-600); }
+.text-primary-700 { color: var(--color-primary-700); }
+.bg-primary-50 { background-color: var(--color-primary-50); }
+.bg-primary-100 { background-color: var(--color-primary-100); }
+.bg-primary-500 { background-color: var(--color-primary-500); }
+.bg-primary-600 { background-color: var(--color-primary-600); }
+.border-primary-200 { border-color: var(--color-primary-200); }
+.border-primary-500 { border-color: var(--color-primary-500); }
+
+/* Blue Colors (Dodger Blue) */
+.text-blue-500 { color: var(--color-blue-500); }
+.text-blue-600 { color: var(--color-blue-600); }
+.bg-blue-50 { background-color: var(--color-blue-50); }
+.bg-blue-500 { background-color: var(--color-blue-500); }
+.bg-blue-600 { background-color: var(--color-blue-600); }
+.border-blue-500 { border-color: var(--color-blue-500); }
+
+/* Green Colors (Jade Green) */
+.text-green-500 { color: var(--color-green-500); }
+.text-green-600 { color: var(--color-green-600); }
+.bg-green-50 { background-color: var(--color-green-50); }
+.bg-green-500 { background-color: var(--color-green-500); }
+.bg-green-600 { background-color: var(--color-green-600); }
+.border-green-500 { border-color: var(--color-green-500); }
+
+/* Base Colors */
+.text-black { color: var(--color-black); }
+.text-white { color: var(--color-white); }
+.text-gray-600 { color: var(--color-gray-600); }
+.text-gray-700 { color: var(--color-gray-700); }
+.text-gray-800 { color: var(--color-gray-800); }
+.text-gray-900 { color: var(--color-gray-900); }
+.bg-black { background-color: var(--color-black); }
+.bg-white { background-color: var(--color-white); }
+.bg-gray-50 { background-color: var(--color-gray-50); }
+.bg-gray-100 { background-color: var(--color-gray-100); }
+.bg-gray-800 { background-color: var(--color-gray-800); }
+.bg-gray-900 { background-color: var(--color-gray-900); }
+
+/* Hover States */
+.hover\:text-primary-500:hover { color: var(--color-primary-500); }
+.hover\:text-primary-600:hover { color: var(--color-primary-600); }
+.hover\:text-white:hover { color: var(--color-white); }
+.hover\:bg-primary-600:hover { background-color: var(--color-primary-600); }
+.hover\:bg-blue-600:hover { background-color: var(--color-blue-600); }
+.hover\:bg-green-600:hover { background-color: var(--color-green-600); }
+.hover\:bg-gray-700:hover { background-color: var(--color-gray-700); }
+.hover\:border-primary-500:hover { border-color: var(--color-primary-500); }
+
+/* Focus States */
+.focus\:ring-primary-500:focus { --tw-ring-color: var(--color-primary-500); }
+.focus\:ring-blue-500:focus { --tw-ring-color: var(--color-blue-500); }
+.focus\:border-primary-500:focus { border-color: var(--color-primary-500); }
+
+/* Modern Gradients */
+.bg-gradient-gold {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-400));
+}
+
+.bg-gradient-modern {
+  background: linear-gradient(135deg, var(--color-black), var(--color-gray-900));
+}
+
+.bg-gradient-accent {
+  background: linear-gradient(135deg, var(--color-blue-500), var(--color-green-500));
+}
+

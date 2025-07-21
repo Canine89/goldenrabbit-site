@@ -1,29 +1,28 @@
-import { Link, useLocation } from 'react-router-dom'
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { useStore } from '../../store/useStore'
-import { useAuth } from '../../contexts/AuthContext'
-import LoginButton from '../auth/LoginButton'
-import UserProfile from '../auth/UserProfile'
-import Container from '../ui/Container'
-import Badge from '../ui/Badge'
+import UserProfile from './UserProfile'
+import LoginButton from './LoginButton'
+import type { User } from '@supabase/supabase-js'
+import Image from 'next/image';
+import Logo from './gdrb_logo_vertical.png';
 
-export default function Header() {
-  const location = useLocation()
+interface HeaderProps {
+  user: User | null
+  profile: any
+  loading: boolean
+}
+
+export default function Header({ user, profile, loading }: HeaderProps) {
+  const pathname = usePathname()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { cart, getCartTotal } = useStore()
-  const { user, profile, forceUpdateTrigger } = useAuth()
+  const [mounted, setMounted] = useState(false)
 
-  // forceUpdateTrigger 변경 시 Header 상태 추적
   useEffect(() => {
-    if (forceUpdateTrigger > 0 && profile) {
-      console.log('🔄 Header: 프로필 상태 업데이트 감지', { 
-        forceUpdateTrigger, 
-        profileRole: profile.role,
-        userId: user?.id,
-        timestamp: new Date().toISOString()
-      })
-    }
-  }, [forceUpdateTrigger, profile, user])
+    setMounted(true)
+  }, [])
 
   const navigationItems = [
     { name: '소개', href: '/about' },
@@ -31,20 +30,21 @@ export default function Header() {
     { name: '읽을거리', href: '/articles' },
     { name: '토끼상점', href: '/rabbit-store' },
     { name: '저자신청', href: '/author-apply' },
-    { name: '교수회원', href: '/professor' },
+    { name: '교수자료실', href: '/professor/resources' },
   ]
 
-  const isActiveRoute = (href) => {
-    return location.pathname === href || location.pathname.startsWith(href + '/')
+  const isActiveRoute = (href: string) => {
+    return pathname === href || pathname?.startsWith(href + '/')
   }
 
   return (
-    <header className="bg-white sticky top-0 z-50 border-b border-neutral-200 shadow-sm">
-      <Container>
+    <header className="bg-gradient-modern sticky top-0 z-50 border-b border-primary-500 shadow-lg backdrop-blur-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* 로고 */}
-          <Link to="/" className="flex items-center group py-2">
-            <div className="text-2xl font-bold text-primary-500 group-hover:text-primary-600 transition-colors duration-200">
+          <Link href="/" className="flex items-center group py-2">
+            <Image src={Logo} alt="골든래빗 로고" width={56} height={56} className="mr-2" />
+            <div className="text-2xl font-bold text-primary-500 group-hover:text-white transition-colors duration-200">
               골든래빗
             </div>
           </Link>
@@ -54,11 +54,11 @@ export default function Header() {
             {navigationItems.map((item) => (
               <Link
                 key={item.name}
-                to={item.href}
+                href={item.href}
                 className={`flex items-center h-16 px-4 text-sm font-medium transition-colors border-b-2 ${
                   isActiveRoute(item.href)
                     ? 'text-primary-500 border-primary-500'
-                    : 'text-neutral-700 hover:text-primary-500 border-transparent hover:border-primary-200'
+                    : 'text-white hover:text-primary-500 border-transparent hover:border-primary-500'
                 }`}
               >
                 {item.name}
@@ -69,34 +69,31 @@ export default function Header() {
           {/* 우측 액션 버튼들 */}
           <div className="flex items-center space-x-2">
             {/* 검색 아이콘 */}
-            <button className="p-2 text-neutral-600 hover:text-primary-500 hover:bg-neutral-50 rounded-lg transition-all duration-200">
+            <button className="p-2 text-white hover:text-primary-500 hover:bg-gray-800 rounded-lg transition-all duration-200">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
 
-            {/* 장바구니 아이콘 (토끼상점용) */}
-            <Link to="/cart" className="relative p-2 text-neutral-600 hover:text-primary-500 hover:bg-neutral-50 rounded-lg transition-all duration-200">
+            {/* 장바구니 아이콘 */}
+            <Link href="/cart" className="relative p-2 text-white hover:text-blue-500 hover:bg-gray-800 rounded-lg transition-all duration-200">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m1.6 8L5 5H3m4 8v6a2 2 0 002 2h6a2 2 0 002-2v-6" />
               </svg>
-              {getCartTotal() > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[20px] h-5 px-1.5 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center font-medium animate-scale-in">
-                  {getCartTotal()}
-                </span>
-              )}
             </Link>
 
             {/* 로그인/사용자 프로필 */}
-            {user ? (
-              <UserProfile />
+            {loading && user ? (
+              <div className="animate-pulse bg-gray-200 h-10 w-24 rounded"></div>
+            ) : user ? (
+              <UserProfile user={user} profile={profile} />
             ) : (
-              <LoginButton className="text-sm" />
+              <LoginButton />
             )}
 
             {/* 모바일 메뉴 버튼 */}
             <button
-              className="md:hidden p-2 text-neutral-600 hover:text-primary-500 hover:bg-neutral-50 rounded-lg transition-all duration-200"
+              className="md:hidden p-2 text-white hover:text-primary-500 hover:bg-gray-800 rounded-lg transition-all duration-200"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -108,16 +105,16 @@ export default function Header() {
 
         {/* 모바일 메뉴 */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-neutral-200 animate-slide-down">
+          <div className="md:hidden py-4 border-t border-gray-700 animate-fade-in bg-gray-900">
             <div className="space-y-1">
               {navigationItems.map((item) => (
                 <Link
                   key={item.name}
-                  to={item.href}
+                  href={item.href}
                   className={`block px-3 py-2 text-base font-medium transition-colors rounded-lg ${
                     isActiveRoute(item.href)
-                      ? 'text-primary-500 bg-primary-50'
-                      : 'text-neutral-700 hover:text-primary-500 hover:bg-neutral-50'
+                      ? 'text-primary-500 bg-gray-800'
+                      : 'text-white hover:text-primary-500 hover:bg-gray-800'
                   }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
@@ -126,15 +123,15 @@ export default function Header() {
               ))}
               
               {/* 모바일 로그인/사용자 메뉴 */}
-              <div className="pt-4 border-t border-neutral-200">
+              <div className="pt-4 border-t border-gray-700">
                 {user ? (
                   <div className="space-y-1">
-                    <div className="px-3 py-2 text-sm text-neutral-600 bg-neutral-50 rounded-lg">
+                    <div className="px-3 py-2 text-sm text-white bg-gray-800 rounded-lg">
                       {user.user_metadata?.full_name || user.email}
                     </div>
                     <Link
-                      to="/profile"
-                      className="block px-3 py-2 text-sm text-neutral-600 hover:text-primary-500 hover:bg-neutral-50 rounded-lg transition-colors"
+                      href="/profile"
+                      className="block px-3 py-2 text-sm text-white hover:text-primary-500 hover:bg-gray-800 rounded-lg transition-colors"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       프로필 설정
@@ -149,7 +146,7 @@ export default function Header() {
             </div>
           </div>
         )}
-      </Container>
+      </div>
     </header>
   )
 }

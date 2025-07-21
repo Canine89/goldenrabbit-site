@@ -1,0 +1,55 @@
+'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+
+interface NavigationItem {
+  title: string
+  href: string
+  icon: string
+}
+
+const navigationItems: NavigationItem[] = [
+  { title: '대시보드', href: '/admin', icon: '📊' },
+  { title: '도서 관리', href: '/admin/books', icon: '📚' },
+  { title: '상품 관리', href: '/admin/products', icon: '🛍️' },
+  { title: '주문 관리', href: '/admin/orders', icon: '📋' },
+  { title: '사용자 관리', href: '/admin/users', icon: '👥' },
+  { title: '아티클 관리', href: '/admin/articles', icon: '📝' },
+  { title: '이벤트 관리', href: '/admin/events', icon: '🎉' },
+  { title: '교수자료실', href: '/admin/professor-resources', icon: '🎓' },
+]
+
+export default function AdminNavigation() {
+  const pathname = usePathname()
+
+  const isActive = (href: string) => {
+    if (href === '/admin') {
+      return pathname === '/admin'
+    }
+    return pathname?.startsWith(href)
+  }
+
+  return (
+    <div className="bg-white shadow-sm border-b mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center space-x-1 overflow-x-auto py-3">
+          {navigationItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                isActive(item.href)
+                  ? 'bg-primary-100 text-primary-700'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              <span className="mr-2">{item.icon}</span>
+              {item.title}
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,32 +1,41 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../contexts/AuthContext'
-import AdminGuard from './AdminGuard'
+'use client'
 
-const UserProfile = () => {
-  const { user, profile, signOut } = useAuth()
-  const navigate = useNavigate()
+import { useState } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createSupabaseClient } from '../lib/supabase-client'
+import type { User } from '@supabase/supabase-js'
+
+interface UserProfileProps {
+  user: User
+  profile: any
+}
+
+export default function UserProfile({ user, profile }: UserProfileProps) {
+  const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const supabase = createSupabaseClient()
 
   const handleSignOut = async () => {
-    if (isLoggingOut) return // 중복 클릭 방지
+    if (isLoggingOut) return
     
     setIsLoggingOut(true)
     setIsOpen(false)
     
     try {
-      await signOut()
-      // signOut에서 페이지 새로고침 처리
+      await supabase.auth.signOut()
+      router.push('/')
+      router.refresh() // 서버 컴포넌트 새로고침
     } catch (error) {
-      // 오류가 있어도 강제 새로고침
-      window.location.reload()
+      console.error('로그아웃 중 오류:', error)
+    } finally {
+      setIsLoggingOut(false)
     }
   }
 
-  if (!user) {
-    return null
-  }
+  // 서버에서 이미 권한 확인이 완료된 상태
+  const isAdmin = profile?.role === 'admin'
 
   return (
     <div className="relative">
@@ -62,7 +71,7 @@ const UserProfile = () => {
               {user.user_metadata?.full_name || user.email}
             </p>
             <p className="text-xs text-black">{user.email}</p>
-            {profile?.role === 'admin' && (
+            {isAdmin && (
               <span className="inline-block mt-1 px-2 py-1 text-xs bg-[#CFB074] text-white rounded-full">
                 관리자
               </span>
@@ -71,26 +80,23 @@ const UserProfile = () => {
           
           <div className="py-1">
             <Link
-              to="/profile"
+              href="/profile"
               className="block px-4 py-2 text-sm text-black hover:bg-[#CFB074] hover:text-white"
               onClick={() => setIsOpen(false)}
             >
               프로필 설정
             </Link>
             
-            <AdminGuard 
-              showLoading={true}
-              preserveOnRefresh={true}
-              fallback={null}
-            >
+            {/* 서버에서 권한 확인 완료 - 새로고침 문제 없음! */}
+            {isAdmin && (
               <Link
-                to="/admin"
+                href="/admin"
                 className="block px-4 py-2 text-sm text-black hover:bg-[#CFB074] hover:text-white"
                 onClick={() => setIsOpen(false)}
               >
                 관리자 페이지
               </Link>
-            </AdminGuard>
+            )}
             
             <button
               onClick={handleSignOut}
@@ -113,5 +119,3 @@ const UserProfile = () => {
     </div>
   )
 }
-
-export default UserProfile

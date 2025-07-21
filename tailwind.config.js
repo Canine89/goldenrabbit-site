@@ -40,11 +40,13 @@ export default {
           50: '#FFF7ED',
           100: '#FFEED4',
           400: '#FB923C',
-          500: '#FF6B35',
+          500: '#CFB074',
           600: '#EA580C',
           700: '#C2410C',
           800: '#9A3412',
+          900: '#B67D43', // deep gold
         },
+        'deep-gold': '#B67D43',
         'secondary': {
           50: '#FFFEF7',
           500: '#FFD93D',
