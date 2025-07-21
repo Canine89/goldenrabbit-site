@@ -10,7 +10,7 @@ import AdminNavigation from '../components/AdminNavigation'
 
 interface ProfessorResource {
   id: string
-  book_id: string
+  book_id: string | null
   resource_type: 'lecture_slides' | 'source_code' | 'book_info' | 'copyright'
   title: string
   description?: string
@@ -20,7 +20,7 @@ interface ProfessorResource {
   created_at: string
   books?: {
     title: string
-  }
+  } | null
 }
 
 export default function ProfessorResourcesPage() {
@@ -108,7 +108,7 @@ export default function ProfessorResourcesPage() {
           download_count,
           is_active,
           created_at,
-          books (title)
+          books!book_id (title)
         `)
         .order('created_at', { ascending: false })
 

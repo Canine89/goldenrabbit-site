@@ -7,7 +7,7 @@ import Loading from '../../components/ui/Loading'
 
 interface ProfessorResource {
   id: string
-  book_id: string
+  book_id: string | null
   resource_type: 'lecture_slides' | 'source_code' | 'book_info' | 'copyright'
   title: string
   description?: string
@@ -20,7 +20,7 @@ interface ProfessorResource {
     author: string
     category: string
     cover_image_url?: string
-  }
+  } | null
 }
 
 export default function ProfessorResourcesPage() {
@@ -61,7 +61,7 @@ export default function ProfessorResourcesPage() {
           download_count,
           is_active,
           created_at,
-          books (title, author, category)
+          books!book_id (title, author, category)
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
