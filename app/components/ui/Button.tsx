@@ -39,7 +39,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(({
     xl: 'px-8 py-4 text-lg',
   }
   
-  const classes = `${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`
+  const classes = `${baseClasses} ${variants[variant as keyof typeof variants]} ${sizes[size as keyof typeof sizes]} ${className}`
   
   return (
     <Component

@@ -41,7 +41,7 @@ const Card = ({
   
   const hoverEffect = hover ? 'hover:shadow-xl hover:-translate-y-1 cursor-pointer group' : ''
   
-  const classes = `${baseClasses} ${variants[variant]} ${paddings[padding]} ${hoverEffect} ${className}`
+  const classes = `${baseClasses} ${variants[variant as keyof typeof variants]} ${paddings[padding as keyof typeof paddings]} ${hoverEffect} ${className}`
   
   return (
     <Component className={classes} {...props}>

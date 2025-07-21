@@ -67,12 +67,15 @@ const SupabaseDebug = () => {
       }
 
       // 5. 환경변수 확인
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || import.meta.env?.VITE_SUPABASE_URL
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY
+      
       results.envTest = {
-        hasSupabaseUrl: !!import.meta.env.VITE_SUPABASE_URL,
-        hasAnonKey: !!import.meta.env.VITE_SUPABASE_ANON_KEY,
-        supabaseUrl: import.meta.env.VITE_SUPABASE_URL ? 
-          `${import.meta.env.VITE_SUPABASE_URL.substring(0, 20)}...` : 'Missing',
-        anonKeyLength: import.meta.env.VITE_SUPABASE_ANON_KEY?.length || 0
+        hasSupabaseUrl: !!supabaseUrl,
+        hasAnonKey: !!anonKey,
+        supabaseUrl: supabaseUrl ? 
+          `${supabaseUrl.substring(0, 20)}...` : 'Missing',
+        anonKeyLength: anonKey?.length || 0
       }
 
     } catch (error) {

@@ -1,10 +1,20 @@
+import { ReactNode } from 'react'
+
+interface BadgeProps {
+  children: ReactNode
+  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info'
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
+  [key: string]: any
+}
+
 const Badge = ({ 
   children, 
   variant = 'default', 
   size = 'md',
   className = '',
   ...props 
-}) => {
+}: BadgeProps) => {
   const baseClasses = 'inline-flex items-center font-medium rounded-full transition-colors'
   
   const variants = {
@@ -25,7 +35,7 @@ const Badge = ({
     lg: 'px-3 py-1 text-sm',
   }
   
-  const classes = `${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`
+  const classes = `${baseClasses} ${variants[variant as keyof typeof variants]} ${sizes[size as keyof typeof sizes]} ${className}`
   
   return (
     <span className={classes} {...props}>

@@ -1,4 +1,14 @@
+import { ReactNode } from 'react'
 import Container from './Container'
+
+interface SectionProps {
+  children: ReactNode
+  className?: string
+  containerSize?: 'sm' | 'default' | 'lg' | 'xl' | 'full'
+  padding?: 'none' | 'sm' | 'default' | 'lg' | 'xl'
+  background?: 'transparent' | 'white' | 'neutral' | 'primary' | 'secondary' | 'gradient' | 'gradient-subtle' | 'gradient-warm' | 'glass' | 'dark'
+  [key: string]: any
+}
 
 const Section = ({ 
   children, 
@@ -7,7 +17,7 @@ const Section = ({
   padding = 'default',
   background = 'transparent',
   ...props 
-}) => {
+}: SectionProps) => {
   const paddings = {
     none: '',
     sm: 'py-8',
@@ -29,7 +39,7 @@ const Section = ({
     'dark': 'bg-neutral-900 text-white',
   }
   
-  const classes = `${paddings[padding]} ${backgrounds[background]} ${className}`
+  const classes = `${paddings[padding as keyof typeof paddings]} ${backgrounds[background as keyof typeof backgrounds]} ${className}`
   
   return (
     <section className={classes} {...props}>
@@ -40,6 +50,15 @@ const Section = ({
   )
 }
 
+interface SectionHeaderProps {
+  title?: string
+  description?: string
+  className?: string
+  titleClassName?: string
+  descriptionClassName?: string
+  centered?: boolean
+}
+
 const SectionHeader = ({ 
   title, 
   description, 
@@ -47,7 +66,7 @@ const SectionHeader = ({
   titleClassName = '',
   descriptionClassName = '',
   centered = true 
-}) => {
+}: SectionHeaderProps) => {
   const headerClasses = centered ? 'text-center mb-12' : 'mb-12'
   
   return (

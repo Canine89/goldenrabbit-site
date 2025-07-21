@@ -1,4 +1,15 @@
-import { useState } from 'react'
+import { useState, ReactNode } from 'react'
+
+interface AlertProps {
+  children: ReactNode
+  variant?: 'info' | 'success' | 'warning' | 'danger' | 'neutral'
+  dismissible?: boolean
+  onDismiss?: () => void
+  className?: string
+  icon?: ReactNode | false
+  title?: string
+  [key: string]: any
+}
 
 const Alert = ({ 
   children, 
@@ -9,7 +20,7 @@ const Alert = ({
   icon,
   title,
   ...props 
-}) => {
+}: AlertProps) => {
   const [isVisible, setIsVisible] = useState(true)
   
   const variants = {
@@ -59,14 +70,14 @@ const Alert = ({
   
   return (
     <div
-      className={`border rounded-lg p-4 ${variants[variant]} ${className}`}
+      className={`border rounded-lg p-4 ${variants[variant as keyof typeof variants]} ${className}`}
       role="alert"
       {...props}
     >
       <div className="flex">
         {(icon !== false) && (
           <div className="flex-shrink-0">
-            {icon || iconVariants[variant]}
+            {icon || iconVariants[variant as keyof typeof iconVariants]}
           </div>
         )}
         

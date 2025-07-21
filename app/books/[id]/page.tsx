@@ -46,10 +46,10 @@ export default function BookDetailPage() {
   const supabase = createSupabaseClient()
 
   useEffect(() => {
-    if (params.id) {
+    if (params?.id) {
       fetchBook(params.id as string)
     }
-  }, [params.id])
+  }, [params?.id])
 
   const fetchBook = async (bookId: string) => {
     try {

@@ -1,6 +1,15 @@
 import { forwardRef } from 'react'
 
-const Input = forwardRef(({ 
+interface InputProps {
+  label?: string
+  error?: string
+  helperText?: string
+  className?: string
+  containerClassName?: string
+  [key: string]: any
+}
+
+const Input = forwardRef<HTMLInputElement, InputProps>(({ 
   label,
   error,
   helperText,

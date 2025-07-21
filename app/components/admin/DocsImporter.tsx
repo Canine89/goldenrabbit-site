@@ -118,7 +118,7 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
     ]
 
     for (const pattern of titlePatterns) {
-      const matches = [...text.matchAll(pattern)]
+      const matches = Array.from(text.matchAll(pattern))
       for (const match of matches) {
         if (match[1] && match[1].trim().length > 5) {
           let title = match[1].trim()
@@ -205,7 +205,7 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
     ]
 
     for (const pattern of pagePatterns) {
-      const matches = [...text.matchAll(pattern)]
+      const matches = Array.from(text.matchAll(pattern))
       if (matches.length > 0) {
         const pages = matches
           .map(m => parseInt(m[1]))
@@ -251,7 +251,7 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
     ]
 
     for (const pattern of datePatterns) {
-      const matches = [...text.matchAll(pattern)]
+      const matches = Array.from(text.matchAll(pattern))
       for (const match of matches) {
         if (match.length > 3) {
           const year = match[1]

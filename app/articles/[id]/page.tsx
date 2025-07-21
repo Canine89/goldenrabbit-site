@@ -31,10 +31,10 @@ export default function ArticleDetailPage() {
   const supabase = createSupabaseClient()
 
   useEffect(() => {
-    if (params.id) {
+    if (params?.id) {
       fetchArticle(params.id as string)
     }
-  }, [params.id])
+  }, [params?.id])
 
   const fetchArticle = async (articleId: string) => {
     try {

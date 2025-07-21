@@ -21,7 +21,7 @@ const Container = ({
     full: 'max-w-full',
   }
   
-  const classes = `${sizes[size]} mx-auto px-4 sm:px-6 lg:px-8 ${className}`
+  const classes = `${sizes[size as keyof typeof sizes]} mx-auto px-4 sm:px-6 lg:px-8 ${className}`
   
   return (
     <div className={classes} {...props}>
