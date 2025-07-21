@@ -120,11 +120,16 @@ export default function ProfessorResourcesPage() {
 
       if (error) throw error
       
+      // 디버깅: 원본 데이터 확인
+      console.log('🔍 Supabase에서 불러온 원본 데이터:', data)
+      
       // Supabase relation 결과를 우리 인터페이스에 맞게 변환
       const transformedData: ProfessorResource[] = (data as SupabaseResource[] || []).map(item => ({
         ...item,
         books: item.books && item.books.length > 0 ? item.books[0] : null
       }))
+      
+      console.log('🔄 변환된 데이터:', transformedData)
       
       setResources(transformedData)
       setFilteredResources(transformedData)
@@ -190,6 +195,10 @@ export default function ProfessorResourcesPage() {
     e.preventDefault()
     
     try {
+      // 디버깅: 폼 데이터 확인
+      console.log('📝 폼 데이터:', formData)
+      console.log('📚 선택된 도서 ID:', formData.book_id)
+      
       // 자료 유형에 따른 자동 제목 생성
       const titleMap = {
         lecture_slides: '강의교안',
@@ -201,6 +210,14 @@ export default function ProfessorResourcesPage() {
       const title = titleMap[formData.resource_type]
       
       if (editingResource) {
+        console.log('✏️ 수정 모드 - 업데이트할 데이터:', {
+          book_id: formData.book_id || null,
+          resource_type: formData.resource_type,
+          title: title,
+          file_url: formData.file_url,
+          is_active: formData.is_active
+        })
+        
         const { error } = await supabase
           .from('professor_resources')
           .update({
@@ -215,7 +232,16 @@ export default function ProfessorResourcesPage() {
         if (error) throw error
         alert('자료가 성공적으로 수정되었습니다.')
       } else {
-        const { error } = await supabase
+        console.log('➕ 추가 모드 - 삽입할 데이터:', {
+          book_id: formData.book_id || null,
+          resource_type: formData.resource_type,
+          title: title,
+          file_url: formData.file_url,
+          is_active: formData.is_active,
+          download_count: 0
+        })
+        
+        const { data, error } = await supabase
           .from('professor_resources')
           .insert([{
             book_id: formData.book_id || null,
@@ -225,8 +251,10 @@ export default function ProfessorResourcesPage() {
             is_active: formData.is_active,
             download_count: 0
           }])
+          .select()
 
         if (error) throw error
+        console.log('✅ 저장된 데이터:', data)
         alert('자료가 성공적으로 등록되었습니다.')
       }
 
