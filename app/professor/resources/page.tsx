@@ -72,7 +72,32 @@ export default function ProfessorResourcesPage() {
         return
       }
 
-      setUser(user)
+      // 사용자 프로필 확인 (role 체크)
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, full_name, university, department')
+        .eq('id', user.id)
+        .single()
+
+      if (!profileError && profile) {
+        // professor_pending 상태면 접근 차단
+        if (profile.role === 'professor_pending') {
+          setUser({ ...user, profile })
+          setLoading(false)
+          return
+        }
+        
+        // professor 또는 admin만 접근 허용
+        if (profile.role === 'professor' || profile.role === 'admin') {
+          setUser({ ...user, profile })
+        } else {
+          setUser({ ...user, profile })
+        }
+      } else {
+        setUser({ ...user, profile: null })
+      }
+      
+      setLoading(false)
     } catch (error) {
       console.error('인증 확인 실패:', error)
       setUser(null)
@@ -85,7 +110,8 @@ export default function ProfessorResourcesPage() {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: 'openid email profile https://www.googleapis.com/auth/drive'
         }
       })
       
@@ -299,6 +325,100 @@ export default function ProfessorResourcesPage() {
             
             <div className="pt-4 border-t border-gray-200">
               <Link href="/" className="text-primary-600 hover:text-primary-700 text-sm">
+                ← 메인 페이지로 돌아가기
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 교수회원 대기 상태인 경우 접근 차단
+  if (user?.profile?.role === 'professor_pending') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mb-6">
+            <svg className="w-16 h-16 mx-auto text-yellow-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">교수회원 승인 대기 중</h2>
+            <p className="text-gray-600 mb-4">
+              교수회원 신청이 접수되었습니다.
+            </p>
+          </div>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="text-sm text-yellow-800">
+              <p className="font-medium mb-2">신청자 정보</p>
+              <p><strong>이름:</strong> {user.profile.full_name || '정보 없음'}</p>
+              <p><strong>소속:</strong> {user.profile.university} {user.profile.department && `- ${user.profile.department}`}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600">
+              <p className="font-medium text-gray-800 mb-2">관리자 승인 후 이용 가능합니다</p>
+              <p>승인이 완료되면 교수회원 자료실의 모든 자료를 다운로드하실 수 있습니다.</p>
+            </div>
+            
+            <div className="pt-4 border-t border-gray-200 space-y-2">
+              <Link 
+                href="/professor" 
+                className="inline-block text-primary-600 hover:text-primary-700 text-sm font-medium"
+              >
+                교수회원 신청 페이지로 이동
+              </Link>
+              <br />
+              <Link 
+                href="/" 
+                className="text-gray-600 hover:text-gray-700 text-sm"
+              >
+                ← 메인 페이지로 돌아가기
+              </Link>
+            </div>
+            
+            <div className="text-xs text-gray-500 pt-4 border-t border-gray-200">
+              승인 관련 문의: <a href="mailto:master@goldenrabbit.co.kr" className="text-primary-600 underline">master@goldenrabbit.co.kr</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // 일반 사용자(교수가 아닌 경우)도 접근 차단
+  if (user?.profile && user.profile.role !== 'professor' && user.profile.role !== 'admin') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mb-6">
+            <svg className="w-16 h-16 mx-auto text-gray-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">교수 자료실</h2>
+            <p className="text-gray-600">
+              교수회원만 이용할 수 있는 서비스입니다.
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                교수회원으로 가입하시면 골든래빗 출간 도서의 강의교안, 소스코드, 도서정보, 판권자료를 다운로드하실 수 있습니다.
+              </p>
+            </div>
+            
+            <Link 
+              href="/professor"
+              className="inline-block w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 transition-colors"
+            >
+              교수회원 가입하기
+            </Link>
+            
+            <div className="pt-4 border-t border-gray-200">
+              <Link href="/" className="text-gray-600 hover:text-gray-700 text-sm">
                 ← 메인 페이지로 돌아가기
               </Link>
             </div>

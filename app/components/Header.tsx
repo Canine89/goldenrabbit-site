@@ -24,13 +24,19 @@ export default function Header({ user, profile, loading }: HeaderProps) {
     setMounted(true)
   }, [])
 
+  // 사용자 role 확인
+  const isProfessorOrAdmin = profile?.role === 'professor' || profile?.role === 'admin'
+
   const navigationItems = [
     { name: '소개', href: '/about' },
     { name: '도서', href: '/books' },
     { name: '읽을거리', href: '/articles' },
     { name: '토끼상점', href: '/rabbit-store' },
     { name: '저자신청', href: '/author-apply' },
-    { name: '교수자료실', href: '/professor/resources' },
+    { name: '교수회원 가입', href: '/professor' },
+    ...(isProfessorOrAdmin ? [
+      { name: '교수자료실', href: '/professor/resources' },
+    ] : []),
   ]
 
   const isActiveRoute = (href: string) => {

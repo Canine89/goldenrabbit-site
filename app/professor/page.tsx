@@ -2,9 +2,16 @@
 
 import { useState, useEffect } from 'react'
 import { createSupabaseClient } from '../lib/supabase-client'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Button from '../components/ui/Button'
+import Loading from '../components/ui/Loading'
 
 export default function ProfessorPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [checkingAuth, setCheckingAuth] = useState(true)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,8 +29,64 @@ export default function ProfessorPage() {
   const supabase = createSupabaseClient()
 
   useEffect(() => {
-    fetchBooks()
+    checkAuth()
   }, [])
+
+  useEffect(() => {
+    if (user) {
+      fetchBooks()
+    }
+  }, [user])
+
+  const checkAuth = async () => {
+    try {
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError || !user) {
+        setUser(null)
+        setCheckingAuth(false)
+        return
+      }
+
+      // 사용자 프로필 정보도 가져오기
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('role, full_name, university, department, professor_application_date')
+        .eq('id', user.id)
+        .single()
+
+      if (!profileError && profile) {
+        setUserProfile(profile)
+      }
+
+      setUser(user)
+      setCheckingAuth(false)
+    } catch (error) {
+      console.error('인증 확인 실패:', error)
+      setUser(null)
+      setCheckingAuth(false)
+    }
+  }
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: 'openid email profile https://www.googleapis.com/auth/drive'
+        }
+      })
+      
+      if (error) {
+        console.error('로그인 오류:', error)
+        alert('로그인 중 오류가 발생했습니다.')
+      }
+    } catch (error) {
+      console.error('로그인 처리 오류:', error)
+      alert('로그인 중 오류가 발생했습니다.')
+    }
+  }
 
   const fetchBooks = async () => {
     try {
@@ -41,10 +104,36 @@ export default function ProfessorPage() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
+    const { name, value } = e.target
+    
+    // 전화번호 자동 포매팅
+    if (name === 'phone') {
+      // 숫자만 추출
+      const numbers = value.replace(/[^\d]/g, '')
+      
+      // 포매팅 적용
+      let formatted = ''
+      if (numbers.length <= 3) {
+        formatted = numbers
+      } else if (numbers.length <= 7) {
+        formatted = `${numbers.slice(0, 3)}-${numbers.slice(3)}`
+      } else if (numbers.length <= 11) {
+        formatted = `${numbers.slice(0, 3)}-${numbers.slice(3, 7)}-${numbers.slice(7)}`
+      } else {
+        // 11자리 초과 입력 방지
+        return
+      }
+      
+      setFormData({
+        ...formData,
+        [name]: formatted
+      })
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      })
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,12 +142,45 @@ export default function ProfessorPage() {
     setError('')
     setSuccess(false)
 
-    try {
-      const { error: dbError } = await supabase
-        .from('professor_applications')
-        .insert([formData])
+    // 전화번호 형식 검증
+    const phoneRegex = /^\d{3}-\d{4}-\d{4}$/
+    if (!phoneRegex.test(formData.phone)) {
+      setError('전화번호는 000-0000-0000 형식으로 입력해주세요.')
+      setLoading(false)
+      return
+    }
 
-      if (dbError) throw dbError
+    try {
+      // 현재 사용자의 프로필 업데이트
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          role: 'professor_pending',
+          full_name: formData.name,
+          phone: formData.phone,
+          university: formData.university,
+          department: formData.department,
+          course: formData.course,
+          professor_book_id: formData.book_id,
+          professor_message: formData.message,
+          professor_application_date: new Date().toISOString()
+        })
+        .eq('id', user.id)
+
+      if (profileError) throw profileError
+
+      // professor_applications 테이블에도 기록 (백업/이력 관리용)
+      const { error: appError } = await supabase
+        .from('professor_applications')
+        .insert([{
+          ...formData,
+          user_id: user.id
+        }])
+
+      if (appError) {
+        console.error('백업 테이블 저장 실패:', appError)
+        // 백업 실패는 무시하고 계속 진행
+      }
 
       setSuccess(true)
       setFormData({
@@ -76,6 +198,54 @@ export default function ProfessorPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Loading size="lg" text="페이지 로딩 중..." />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mb-6">
+            <svg className="w-16 h-16 mx-auto text-primary-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l9-5-9-5-9 5 9 5z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+            </svg>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">교수회원 등록</h2>
+            <p className="text-gray-600">
+              교수회원 등록을 하려면 로그인이 필요합니다.
+            </p>
+          </div>
+          
+          <div className="space-y-4">
+            <Button 
+              onClick={handleGoogleLogin}
+              className="w-full"
+            >
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Google로 로그인
+            </Button>
+            
+            <div className="pt-4 border-t border-gray-200">
+              <Link href="/" className="text-primary-600 hover:text-primary-700 text-sm">
+                ← 메인 페이지로 돌아가기
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -146,7 +316,7 @@ export default function ProfessorPage() {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-blue-800">
-              <strong>안내:</strong> 등록 후 바로 <a href="/professor/resources" className="underline">교수회원 자료실</a>에서 관련 자료를 다운로드하실 수 있습니다.
+              <strong>안내:</strong> 교수회원 신청 후 관리자 승인을 거쳐 <a href="/professor/resources" className="underline">교수회원 자료실</a>에서 관련 자료를 다운로드하실 수 있습니다.
             </p>
           </div>
         </div>
@@ -158,7 +328,7 @@ export default function ProfessorPage() {
           {success && (
             <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-green-800">
-                등록이 완료되었습니다. 이제 <a href="/professor/resources" className="underline">교수회원 자료실</a>에서 자료를 다운로드하실 수 있습니다.
+                교수회원 신청이 완료되었습니다. 관리자 승인 후 <a href="/professor/resources" className="underline">교수회원 자료실</a>에서 자료를 다운로드하실 수 있습니다.
               </p>
             </div>
           )}
@@ -169,7 +339,57 @@ export default function ProfessorPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {/* 교수회원 대기 상태 메시지 */}
+          {userProfile?.role === 'professor_pending' && (
+            <div className="mb-6 p-6 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center mb-4">
+                <svg className="w-8 h-8 text-yellow-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-yellow-800">교수회원 승인 대기 중</h3>
+              </div>
+              <div className="space-y-2 text-sm text-yellow-700">
+                <p><strong>신청자:</strong> {userProfile.full_name || '정보 없음'}</p>
+                <p><strong>소속:</strong> {userProfile.university} {userProfile.department && `- ${userProfile.department}`}</p>
+                {userProfile.professor_application_date && (
+                  <p><strong>신청일:</strong> {new Date(userProfile.professor_application_date).toLocaleDateString('ko-KR')}</p>
+                )}
+                <div className="mt-4 p-4 bg-yellow-100 rounded-lg">
+                  <p className="text-yellow-800 font-medium">
+                    교수회원 신청이 접수되었습니다. 관리자 승인 후 교수회원 자료실을 이용하실 수 있습니다.
+                  </p>
+                  <p className="text-yellow-700 text-xs mt-2">
+                    승인 관련 문의: <a href="mailto:master@goldenrabbit.co.kr" className="underline">master@goldenrabbit.co.kr</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 이미 교수인 경우 메시지 */}
+          {userProfile?.role === 'professor' && (
+            <div className="mb-6 p-6 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center mb-4">
+                <svg className="w-8 h-8 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-green-800">교수회원 승인 완료</h3>
+              </div>
+              <div className="space-y-2 text-sm text-green-700">
+                <p><strong>승인된 교수:</strong> {userProfile.full_name || '정보 없음'}</p>
+                <p><strong>소속:</strong> {userProfile.university} {userProfile.department && `- ${userProfile.department}`}</p>
+                <div className="mt-4 p-4 bg-green-100 rounded-lg">
+                  <p className="text-green-800 font-medium">
+                    교수회원으로 승인되었습니다. 이제 <a href="/professor/resources" className="underline font-semibold">교수회원 자료실</a>에서 자료를 다운로드하실 수 있습니다.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 신청 폼은 일반 사용자나 관리자에게만 표시 */}
+          {(!userProfile?.role || userProfile?.role === 'user' || userProfile?.role === 'admin') && (
+            <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -211,8 +431,12 @@ export default function ProfessorPage() {
                   onChange={handleChange}
                   required
                   placeholder="010-0000-0000"
+                  pattern="\d{3}-\d{4}-\d{4}"
+                  title="전화번호는 000-0000-0000 형식으로 입력해주세요"
+                  maxLength={13}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
+                <p className="mt-1 text-xs text-gray-500">숫자만 입력하시면 자동으로 하이픈(-)이 추가됩니다.</p>
               </div>
               <div>
                 <label htmlFor="university" className="block text-sm font-medium text-gray-700 mb-2">
@@ -304,17 +528,11 @@ export default function ProfessorPage() {
               </Button>
             </div>
           </form>
+          )}
         </div>
 
         {/* 문의 정보 */}
-        <div className="mt-12 text-center text-gray-600">
-          <p className="mb-2">교수회원 관련 문의</p>
-          <p className="font-semibold">
-            <a href="mailto:professor@goldenrabbit.co.kr" className="text-primary-600 hover:text-primary-700">
-              professor@goldenrabbit.co.kr
-            </a>
-          </p>
-        </div>
+        {/* 삭제: <div className="mt-12 text-center text-gray-600"> ... </div> */}
       </div>
     </div>
   )
