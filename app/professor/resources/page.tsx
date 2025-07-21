@@ -5,10 +5,12 @@ import { createSupabaseClient } from '../../lib/supabase-client'
 import Button from '../../components/ui/Button'
 import Loading from '../../components/ui/Loading'
 
+type ResourceType = 'lecture_slides' | 'source_code' | 'book_info' | 'copyright'
+
 interface ProfessorResource {
   id: string
   book_id: string | null
-  resource_type: 'lecture_slides' | 'source_code' | 'book_info' | 'copyright'
+  resource_type: ResourceType
   title: string
   description?: string
   file_url?: string

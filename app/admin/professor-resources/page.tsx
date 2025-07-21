@@ -8,10 +8,12 @@ import Button from '../../components/ui/Button'
 import Loading from '../../components/ui/Loading'
 import AdminNavigation from '../components/AdminNavigation'
 
+type ResourceType = 'lecture_slides' | 'source_code' | 'book_info' | 'copyright'
+
 interface ProfessorResource {
   id: string
   book_id: string | null
-  resource_type: 'lecture_slides' | 'source_code' | 'book_info' | 'copyright'
+  resource_type: ResourceType
   title: string
   description?: string
   file_url?: string
@@ -42,7 +44,7 @@ export default function ProfessorResourcesPage() {
   const [selectedStatus, setSelectedStatus] = useState('전체')
   const [formData, setFormData] = useState({
     book_id: '',
-    resource_type: 'lecture_slides' as const,
+    resource_type: 'lecture_slides' as ResourceType,
     file_url: '',
     is_active: true
   })
@@ -176,7 +178,7 @@ export default function ProfessorResourcesPage() {
   const resetForm = () => {
     setFormData({
       book_id: '',
-      resource_type: 'lecture_slides',
+      resource_type: 'lecture_slides' as ResourceType,
       file_url: '',
       is_active: true
     })
