@@ -103,7 +103,8 @@ export default function ProfessorResourcesPage() {
       setLoading(true)
       setError(null)
       
-      const { data, error } = await supabase
+      // 먼저 professor_resources 데이터 조회
+      const { data: resourcesData, error: resourcesError } = await supabase
         .from('professor_resources')
         .select(`
           id,
@@ -113,26 +114,46 @@ export default function ProfessorResourcesPage() {
           file_url,
           download_count,
           is_active,
-          created_at,
-          books (title)
+          created_at
         `)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (resourcesError) throw resourcesError
       
-      // 디버깅: 원본 데이터 확인
-      console.log('🔍 Supabase에서 불러온 원본 데이터:', data)
+      console.log('📚 Resources 데이터:', resourcesData)
       
-      // Supabase relation 결과를 우리 인터페이스에 맞게 변환
-      const transformedData: ProfessorResource[] = (data as SupabaseResource[] || []).map(item => ({
-        ...item,
-        books: item.books && item.books.length > 0 ? item.books[0] : null
-      }))
+      // book_id가 있는 항목들의 도서 정보 따로 조회
+      const resourcesWithBooks: ProfessorResource[] = []
       
-      console.log('🔄 변환된 데이터:', transformedData)
+      for (const resource of resourcesData || []) {
+        let bookInfo = null
+        
+        if (resource.book_id) {
+          console.log(`🔍 도서 조회 중: ${resource.book_id}`)
+          const { data: bookData, error: bookError } = await supabase
+            .from('books')
+            .select('title')
+            .eq('id', resource.book_id)
+            .single()
+          
+          if (!bookError && bookData) {
+            bookInfo = bookData
+            console.log(`✅ 도서 찾음:`, bookData)
+          } else {
+            console.log(`❌ 도서 조회 실패:`, bookError)
+          }
+        }
+        
+        resourcesWithBooks.push({
+          ...resource,
+          books: bookInfo
+        })
+      }
       
-      setResources(transformedData)
-      setFilteredResources(transformedData)
+      console.log('🔄 변환된 데이터:', resourcesWithBooks)
+      
+      setResources(resourcesWithBooks)
+      setFilteredResources(resourcesWithBooks)
     } catch (error: any) {
       setError(`자료 목록을 불러오는데 실패했습니다: ${error.message}`)
     } finally {
