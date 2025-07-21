@@ -55,7 +55,8 @@ export default function ProfessorResourcesPage() {
       setLoading(true)
       setError(null)
       
-      const { data, error } = await supabase
+      // 먼저 professor_resources 데이터 조회
+      const { data: resourcesData, error: resourcesError } = await supabase
         .from('professor_resources')
         .select(`
           id,
@@ -66,22 +67,39 @@ export default function ProfessorResourcesPage() {
           file_url,
           download_count,
           is_active,
-          created_at,
-          books!book_id (title, author, category)
+          created_at
         `)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (resourcesError) throw resourcesError
       
-      // Supabase relation 결과를 우리 인터페이스에 맞게 변환
-      const transformedData: ProfessorResource[] = (data as SupabaseResource[] || []).map(item => ({
-        ...item,
-        books: item.books && item.books.length > 0 ? item.books[0] : null
-      }))
+      // book_id가 있는 항목들의 도서 정보 따로 조회
+      const resourcesWithBooks: ProfessorResource[] = []
       
-      setResources(transformedData)
-      setFilteredResources(transformedData)
+      for (const resource of resourcesData || []) {
+        let bookInfo = null
+        
+        if (resource.book_id) {
+          const { data: bookData, error: bookError } = await supabase
+            .from('books')
+            .select('title, author, category, cover_image_url')
+            .eq('id', resource.book_id)
+            .single()
+          
+          if (!bookError && bookData) {
+            bookInfo = bookData
+          }
+        }
+        
+        resourcesWithBooks.push({
+          ...resource,
+          books: bookInfo
+        })
+      }
+      
+      setResources(resourcesWithBooks)
+      setFilteredResources(resourcesWithBooks)
     } catch (error: any) {
       setError(`자료를 불러오는데 실패했습니다: ${error.message}`)
     } finally {
