@@ -114,7 +114,7 @@ export default function ProfessorResourcesPage() {
           download_count,
           is_active,
           created_at,
-          books!book_id (title)
+          books (title)
         `)
         .order('created_at', { ascending: false })
 
