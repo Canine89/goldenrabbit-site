@@ -458,7 +458,10 @@ export default function BookManagementPage() {
         {/* 도서 등록/수정 폼 */}
         {showAddForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+            <div 
+              className="bg-white rounded-lg p-8 w-full max-w-7xl max-h-[98vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100" 
+              style={{scrollbarGutter: 'stable'}}
+            >
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-900">
                   {editingBook ? '도서 수정' : '새 도서 등록'}
@@ -484,7 +487,7 @@ export default function BookManagementPage() {
                 <DocsImporter onBookInfoExtracted={handleBookInfoExtracted} />
 
                 {/* 기본 정보 */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       도서명 *
@@ -626,43 +629,58 @@ export default function BookManagementPage() {
                 </div>
 
                 {/* 긴 텍스트 필드들 */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    도서 설명
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={6}
-                    placeholder="마크다운 문법을 사용할 수 있습니다"
-                  />
-                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      도서 설명
+                    </label>
+                    <textarea
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                      rows={8}
+                      placeholder="마크다운 문법을 사용할 수 있습니다"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    출판사 리뷰
-                  </label>
-                  <textarea
-                    value={formData.publisher_review}
-                    onChange={(e) => setFormData({...formData, publisher_review: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={6}
-                    placeholder="출판사 리뷰 내용을 입력하세요 (마크다운 문법 사용 가능)"
-                  />
-                </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      출판사 리뷰
+                    </label>
+                    <textarea
+                      value={formData.publisher_review}
+                      onChange={(e) => setFormData({...formData, publisher_review: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                      rows={8}
+                      placeholder="출판사 리뷰 내용을 입력하세요 (마크다운 문법 사용 가능)"
+                    />
+                  </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    추천사
-                  </label>
-                  <textarea
-                    value={formData.testimonials}
-                    onChange={(e) => setFormData({...formData, testimonials: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={6}
-                    placeholder="추천사 내용을 입력하세요 (마크다운 문법 사용 가능)"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      추천사
+                    </label>
+                    <textarea
+                      value={formData.testimonials}
+                      onChange={(e) => setFormData({...formData, testimonials: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                      rows={8}
+                      placeholder="추천사 내용을 입력하세요 (마크다운 문법 사용 가능)"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      저자 소개
+                    </label>
+                    <textarea
+                      value={formData.author_bio}
+                      onChange={(e) => setFormData({...formData, author_bio: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                      rows={8}
+                      placeholder="마크다운 문법을 사용할 수 있습니다"
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -672,21 +690,8 @@ export default function BookManagementPage() {
                   <textarea
                     value={formData.table_of_contents}
                     onChange={(e) => setFormData({...formData, table_of_contents: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={8}
-                    placeholder="마크다운 문법을 사용할 수 있습니다"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    저자 소개
-                  </label>
-                  <textarea
-                    value={formData.author_bio}
-                    onChange={(e) => setFormData({...formData, author_bio: e.target.value})}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={4}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+                    rows={10}
                     placeholder="마크다운 문법을 사용할 수 있습니다"
                   />
                 </div>
@@ -694,42 +699,44 @@ export default function BookManagementPage() {
                 {/* 정오표 링크 */}
                 <div className="space-y-4">
                   <h4 className="text-lg font-medium text-gray-900 border-b pb-2">정오표 링크</h4>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      정오표 URL (선택사항)
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.errata_link}
-                      onChange={(e) => setFormData({...formData, errata_link: e.target.value})}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="https://example.com/errata 또는 구글 문서 링크"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      도서의 정오표나 오탈자 수정 내용이 있는 페이지 링크를 입력하세요.
-                    </p>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      오탈자 신고 URL (선택사항)
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.error_report_link}
-                      onChange={(e) => setFormData({...formData, error_report_link: e.target.value})}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      placeholder="https://forms.google.com/... 또는 신고 페이지 링크"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">
-                      독자가 오탈자를 신고할 수 있는 구글 폼이나 페이지 링크를 입력하세요.
-                    </p>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        정오표 URL (선택사항)
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.errata_link}
+                        onChange={(e) => setFormData({...formData, errata_link: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="https://example.com/errata 또는 구글 문서 링크"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        도서의 정오표나 오탈자 수정 내용이 있는 페이지 링크를 입력하세요.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        오탈자 신고 URL (선택사항)
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.error_report_link}
+                        onChange={(e) => setFormData({...formData, error_report_link: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="https://forms.google.com/... 또는 신고 페이지 링크"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        독자가 오탈자를 신고할 수 있는 구글 폼이나 페이지 링크를 입력하세요.
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 {/* 온라인 서점 링크 */}
                 <div className="space-y-4">
                   <h4 className="text-lg font-medium text-gray-900 border-b pb-2">온라인 서점 링크</h4>
-                  <div className="grid grid-cols-1 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         YES24 링크
