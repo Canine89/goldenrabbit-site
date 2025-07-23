@@ -10,8 +10,17 @@
 
 ## 기술 스택
 - 백엔드: Supabase
-- 프론트엔드: 비용 효율적인 기술 스택 사용
+- 프론트엔드: Next.js, TypeScript, Tailwind CSS
+- 배포: Vercel (자동 배포 설정됨)
 - 모바일: 기본적인 반응형 디자인
+
+## 배포 정보
+- **플랫폼**: Vercel에 이미 배포 설정 완료
+- **자동 배포**: GitHub main 브랜치에 푸시하면 자동으로 빌드 및 배포됨
+- **도메인**: Vercel에서 자동 생성된 URL 사용
+- **환경변수**: Vercel 대시보드에서 설정 완료
+  - `NEXT_PUBLIC_SUPABASE_URL`
+  - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 ## 도서 카테고리
 - 경제경영
