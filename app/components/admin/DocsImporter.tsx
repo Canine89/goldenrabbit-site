@@ -65,52 +65,21 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
       throw new Error('문서 URL을 입력해주세요.')
     }
 
-    // URL에서 문서 ID 추출
-    const match = documentUrl.match(/\/document\/d\/([a-zA-Z0-9-_]+)/)
-    if (!match) {
-      throw new Error('올바른 Google Docs URL이 아닙니다.')
+    // 서버사이드 API를 통해 구글 문서 가져오기
+    const response = await fetch('/api/fetch-google-doc', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ url: documentUrl })
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || '문서를 가져오는데 실패했습니다.')
     }
 
-    const documentId = match[1]
-    
-    // 여러 프록시 서버 시도
-    const proxyUrls = [
-      `https://api.allorigins.win/get?url=${encodeURIComponent(
-        `https://docs.google.com/document/d/${documentId}/export?format=txt`
-      )}`,
-      `https://corsproxy.io/?${encodeURIComponent(
-        `https://docs.google.com/document/d/${documentId}/export?format=txt`
-      )}`,
-      `https://cors-anywhere.herokuapp.com/https://docs.google.com/document/d/${documentId}/export?format=txt`
-    ]
-    
-    let text = ''
-    let lastError: Error | null = null
-    
-    for (const proxyUrl of proxyUrls) {
-      try {
-        const response = await fetch(proxyUrl)
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
-        }
-
-        if (proxyUrl.includes('allorigins.win')) {
-          const data = await response.json()
-          text = data.contents
-        } else {
-          text = await response.text()
-        }
-        
-        break
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error(String(error))
-        continue
-      }
-    }
-    
-    if (!text) {
-      throw new Error(`모든 프록시 서버에서 문서 가져오기 실패: ${lastError?.message || '알 수 없는 오류'}. 문서가 공개되어 있는지 확인해주세요.`)
-    }
+    const { text } = await response.json()
     
     // 텍스트 파싱
     const bookInfo = parseBookInfoFromText(text)
