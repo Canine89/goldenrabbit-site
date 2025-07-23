@@ -25,6 +25,8 @@ interface Book {
   description?: string
   publisher_review?: string
   testimonials?: string
+  errata_link?: string
+  error_report_link?: string
   is_featured: boolean
   is_active: boolean
   created_at: string
@@ -46,6 +48,8 @@ interface FormData {
   publication_date: string
   table_of_contents: string
   author_bio: string
+  errata_link: string
+  error_report_link: string
   is_featured: boolean
   yes24_link: string
   kyobo_link: string
@@ -79,6 +83,8 @@ export default function BookManagementPage() {
     publication_date: '',
     table_of_contents: '',
     author_bio: '',
+    errata_link: '',
+    error_report_link: '',
     is_featured: false,
     yes24_link: '',
     kyobo_link: '',
@@ -233,6 +239,8 @@ export default function BookManagementPage() {
       publication_date: book.publication_date || '',
       table_of_contents: book.table_of_contents || '',
       author_bio: book.author_bio || '',
+      errata_link: book.errata_link || '',
+      error_report_link: book.error_report_link || '',
       is_featured: book.is_featured,
       yes24_link: (book as any).yes24_link || '',
       kyobo_link: (book as any).kyobo_link || '',
@@ -302,6 +310,8 @@ export default function BookManagementPage() {
         publication_date: formData.publication_date || null,
         table_of_contents: formData.table_of_contents,
         author_bio: formData.author_bio,
+        errata_link: formData.errata_link || null,
+        error_report_link: formData.error_report_link || null,
         is_featured: formData.is_featured,
         is_active: true,
         yes24_link: formData.yes24_link || null,
@@ -663,6 +673,41 @@ export default function BookManagementPage() {
                     rows={4}
                     placeholder="마크다운 문법을 사용할 수 있습니다"
                   />
+                </div>
+
+                {/* 정오표 링크 */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-medium text-gray-900 border-b pb-2">정오표 링크</h4>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      정오표 URL (선택사항)
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.errata_link}
+                      onChange={(e) => setFormData({...formData, errata_link: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="https://example.com/errata 또는 구글 문서 링크"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      도서의 정오표나 오탈자 수정 내용이 있는 페이지 링크를 입력하세요.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      오탈자 신고 URL (선택사항)
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.error_report_link}
+                      onChange={(e) => setFormData({...formData, error_report_link: e.target.value})}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder="https://forms.google.com/... 또는 신고 페이지 링크"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      독자가 오탈자를 신고할 수 있는 구글 폼이나 페이지 링크를 입력하세요.
+                    </p>
+                  </div>
                 </div>
 
                 {/* 온라인 서점 링크 */}

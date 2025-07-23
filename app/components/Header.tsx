@@ -31,7 +31,7 @@ export default function Header({ user, profile, loading }: HeaderProps) {
     { name: '소개', href: '/about' },
     { name: '도서', href: '/books' },
     { name: '읽을거리', href: '/articles' },
-    { name: '토끼상점', href: '/rabbit-store' },
+    { name: '토끼상점', href: 'https://rabbit.prosell.kr/', external: true },
     { name: '저자신청', href: '/author-apply' },
     { name: '교수회원 가입', href: '/professor' },
     ...(isProfessorOrAdmin ? [
@@ -58,17 +58,29 @@ export default function Header({ user, profile, loading }: HeaderProps) {
           {/* 데스크톱 네비게이션 */}
           <nav className="hidden md:flex items-center">
             {navigationItems.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center h-16 px-4 text-sm font-medium transition-colors border-b-2 ${
-                  isActiveRoute(item.href)
-                    ? 'text-primary-500 border-primary-500'
-                    : 'text-white hover:text-primary-500 border-transparent hover:border-primary-500'
-                }`}
-              >
-                {item.name}
-              </Link>
+              item.external ? (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center h-16 px-4 text-sm font-medium transition-colors border-b-2 text-white hover:text-primary-500 border-transparent hover:border-primary-500"
+                >
+                  {item.name}
+                </a>
+              ) : (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center h-16 px-4 text-sm font-medium transition-colors border-b-2 ${
+                    isActiveRoute(item.href)
+                      ? 'text-primary-500 border-primary-500'
+                      : 'text-white hover:text-primary-500 border-transparent hover:border-primary-500'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              )
             ))}
           </nav>
 
@@ -114,18 +126,31 @@ export default function Header({ user, profile, loading }: HeaderProps) {
           <div className="md:hidden py-4 border-t border-gray-700 animate-fade-in bg-gray-900">
             <div className="space-y-1">
               {navigationItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`block px-3 py-2 text-base font-medium transition-colors rounded-lg ${
-                    isActiveRoute(item.href)
-                      ? 'text-primary-500 bg-gray-800'
-                      : 'text-white hover:text-primary-500 hover:bg-gray-800'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
+                item.external ? (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block px-3 py-2 text-base font-medium transition-colors rounded-lg text-white hover:text-primary-500 hover:bg-gray-800"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`block px-3 py-2 text-base font-medium transition-colors rounded-lg ${
+                      isActiveRoute(item.href)
+                        ? 'text-primary-500 bg-gray-800'
+                        : 'text-white hover:text-primary-500 hover:bg-gray-800'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                )
               ))}
               
               {/* 모바일 로그인/사용자 메뉴 */}

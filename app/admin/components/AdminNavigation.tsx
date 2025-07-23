@@ -31,17 +31,17 @@ export default function AdminNavigation() {
   }
 
   return (
-    <div className="bg-white shadow-sm border-b mb-6">
+    <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-sm shadow-md border-b mb-6 transition-all duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center space-x-1 overflow-x-auto py-3">
+        <div className="flex items-center space-x-1 overflow-x-auto py-3 scrollbar-hide">
           {navigationItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`flex items-center px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-200 ${
                 isActive(item.href)
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  ? 'bg-primary-100 text-primary-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:shadow-sm'
               }`}
             >
               <span className="mr-2">{item.icon}</span>

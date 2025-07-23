@@ -148,3 +148,13 @@
   background: linear-gradient(135deg, var(--color-blue-500), var(--color-green-500));
 }
 
+/* Scrollbar Hide Utility */
+.scrollbar-hide {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  -webkit-scrollbar: none;
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+

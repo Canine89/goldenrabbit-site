@@ -20,12 +20,14 @@ export default function Home() {
               >
                 도서 둘러보기
               </Link>
-              <Link 
-                href="/rabbit-store" 
+              <a 
+                href="https://rabbit.prosell.kr/" 
+                target="_blank"
+                rel="noopener noreferrer"
                 className="w-full sm:w-auto px-6 py-3 border-2 border-white text-white rounded-lg font-semibold hover:bg-white hover:text-primary-500 transition-colors"
               >
                 토끼상점 방문하기
-              </Link>
+              </a>
             </div>
           </div>
         </div>

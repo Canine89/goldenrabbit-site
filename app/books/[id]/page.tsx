@@ -27,6 +27,8 @@ interface Book {
   description?: string
   publisher_review?: string
   testimonials?: string
+  errata_link?: string
+  error_report_link?: string
   is_featured: boolean
   is_active: boolean
   created_at: string
@@ -380,6 +382,41 @@ export default function BookDetailPage() {
                   </div>
                 </div>
               </div>
+
+              {/* 정오표 및 오탈자 신고 */}
+              {(book.errata_link || book.error_report_link) && (
+                <div className="pt-6">
+                  <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">정오표 및 오탈자 신고</h3>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    {book.errata_link && (
+                      <a
+                        href={book.errata_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        정오표 확인하기
+                      </a>
+                    )}
+                    {book.error_report_link && (
+                      <a
+                        href={book.error_report_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.99-.833-2.46 0L5.354 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        오탈자 신고하기
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* 온라인 서점 링크 */}
               <div className="pt-6">
