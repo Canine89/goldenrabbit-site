@@ -85,7 +85,7 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
     ]
     
     let text = ''
-    let lastError = null
+    let lastError: Error | null = null
     
     for (const proxyUrl of proxyUrls) {
       try {
@@ -103,7 +103,7 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
         
         break
       } catch (error) {
-        lastError = error
+        lastError = error instanceof Error ? error : new Error(String(error))
         continue
       }
     }
