@@ -1,19 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createSupabaseClient } from '../../lib/supabase-client'
 import Loading from '../../components/ui/Loading'
 import Button from '../../components/ui/Button'
+import { 
+  updateUserRole as updateUserRoleAction, 
+  toggleUserStatus, 
+  getAdminUsers 
+} from '../../../lib/actions/user-actions'
+import { getAdminBooks } from '../../../lib/actions/book-actions'
 
 interface User {
   id: string
-  email: string
+  email?: string
   username?: string
   full_name?: string
-  role: 'user' | 'admin' | 'professor' | 'professor_pending'
-  is_active: boolean
-  created_at: string
+  role: 'customer' | 'admin' | 'professor' | 'professor_pending'
+  is_active?: boolean
+  created_at?: string
+  updated_at?: string
   last_sign_in_at?: string
   // 교수회원 정보
   phone?: string
@@ -44,10 +51,12 @@ export default function UserManagementPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [showRoleModal, setShowRoleModal] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [newRole, setNewRole] = useState<'user' | 'admin' | 'professor' | 'professor_pending'>('user')
+  const [newRole, setNewRole] = useState<'customer' | 'admin' | 'professor' | 'professor_pending'>('customer')
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [detailUser, setDetailUser] = useState<User | null>(null)
   const [books, setBooks] = useState<any[]>([])
+  const [isPending, startTransition] = useTransition()
+  const [submitError, setSubmitError] = useState<string | null>(null)
   
   // 불필요한 상태 제거됨
 
@@ -115,31 +124,16 @@ export default function UserManagementPage() {
       setLoading(true)
       setError(null)
       
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          username,
-          full_name,
-          role,
-          is_active,
-          created_at,
-          phone,
-          university,
-          department,
-          course,
-          professor_book_id,
-          professor_message,
-          professor_application_date
-        `)
-        .order('created_at', { ascending: false })
-
-      if (error) throw error
-
+      const result = await getAdminUsers(1, 1000) // 모든 사용자 가져오기
+      
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      
       // 사용자 데이터 처리
-      const usersData = (data || []).map(profile => ({
+      const usersData = result.data.users.map(profile => ({
         ...profile,
-        email: profile.username || 'Unknown',
+        email: profile.username || profile.email || 'Unknown',
         is_active: profile.is_active ?? true
       }))
       
@@ -154,13 +148,13 @@ export default function UserManagementPage() {
 
   const fetchBooks = async () => {
     try {
-      const { data, error } = await supabase
-        .from('books')
-        .select('id, title, author')
-        .order('title')
-
-      if (error) throw error
-      setBooks(data || [])
+      const result = await getAdminBooks(1, 1000)
+      
+      if (result.success) {
+        setBooks(result.data.books)
+      } else {
+        console.error('도서 조회 실패:', result.error)
+      }
     } catch (error) {
       console.error('도서 조회 실패:', error)
     }
@@ -177,7 +171,7 @@ export default function UserManagementPage() {
     // 역할 필터링
     if (selectedRole !== '전체') {
       const roleMapping = { 
-        '사용자': 'user', 
+        '사용자': 'customer', 
         '관리자': 'admin',
         '교수': 'professor',
         '교수회원 대기': 'professor_pending'
@@ -195,8 +189,9 @@ export default function UserManagementPage() {
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase()
       filtered = filtered.filter(user => 
-        user.email.toLowerCase().includes(searchLower) ||
-        (user.username && user.username.toLowerCase().includes(searchLower))
+        (user.email && user.email.toLowerCase().includes(searchLower)) ||
+        (user.username && user.username.toLowerCase().includes(searchLower)) ||
+        (user.full_name && user.full_name.toLowerCase().includes(searchLower))
       )
     }
 
@@ -215,62 +210,68 @@ export default function UserManagementPage() {
     if (!selectedUser) return
 
     // 교수회원 신청 이력이 있는 사용자의 역할 변경 제한
-    if ((newRole === 'user' || newRole === 'admin') && selectedUser.professor_application_date) {
-      alert('교수회원 신청 이력이 있는 사용자는 교수 관련 역할만 변경 가능합니다.')
+    if ((newRole === 'customer' || newRole === 'admin') && selectedUser.professor_application_date) {
+      alert('교수회원 신청 이랕이 있는 사용자는 교수 관련 역할만 변경 가능합니다.')
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', selectedUser.id)
+    setSubmitError(null)
+    startTransition(async () => {
+      try {
+        // role 매핑 (professor_pending -> customer 변환)
+        const mappedRole = newRole === 'professor_pending' ? 'customer' : newRole
+        
+        const result = await updateUserRoleAction(selectedUser.id, mappedRole as 'customer' | 'professor' | 'admin')
 
-      if (error) throw error
+        if (!result.success) {
+          throw new Error(result.error)
+        }
 
-      const roleLabels = {
-        'admin': '관리자',
-        'user': '사용자',
-        'professor': '교수',
-        'professor_pending': '교수회원 대기'
+        const roleLabels = {
+          'admin': '관리자',
+          'customer': '사용자',
+          'professor': '교수',
+          'professor_pending': '교수회원 대기'
+        }
+        
+        alert(result.message || `${selectedUser.username || selectedUser.email}의 역할이 ${roleLabels[newRole]}(으)로 변경되었습니다.`)
+        setShowRoleModal(false)
+        setSelectedUser(null)
+        fetchUsers()
+      } catch (error: any) {
+        setSubmitError(`역할 변경 중 오류가 발생했습니다: ${error.message}`)
       }
-      
-      alert(`${selectedUser.username || selectedUser.email}의 역할이 ${roleLabels[newRole]}(으)로 변경되었습니다.`)
-      setShowRoleModal(false)
-      setSelectedUser(null)
-      fetchUsers()
-    } catch (error: any) {
-      alert(`역할 변경 중 오류가 발생했습니다: ${error.message}`)
-    }
+    })
   }
 
   const handleToggleActive = async (user: User) => {
     const newStatus = !user.is_active
     const action = newStatus ? '활성화' : '비활성화'
     
-    if (!confirm(`${user.username || user.email} 사용자를 ${action} 하시겠습니까?`)) {
+    if (!confirm(`${user.username || user.email} 사용자를 ${action} 하시경습니까?`)) {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_active: newStatus })
-        .eq('id', user.id)
+    startTransition(async () => {
+      try {
+        const result = await toggleUserStatus(user.id, newStatus)
 
-      if (error) throw error
+        if (!result.success) {
+          throw new Error(result.error)
+        }
 
-      alert(`사용자가 ${action}되었습니다.`)
-      fetchUsers()
-    } catch (error: any) {
-      alert(`사용자 ${action} 중 오류가 발생했습니다: ${error.message}`)
-    }
+        alert(result.message || `사용자가 ${action}되었습니다.`)
+        fetchUsers()
+      } catch (error: any) {
+        alert(`사용자 ${action} 중 오류가 발생했습니다: ${error.message}`)
+      }
+    })
   }
 
   const getRoleLabel = (role: string) => {
     const labels = {
       'admin': '관리자',
-      'user': '사용자',
+      'customer': '사용자',
       'professor': '교수',
       'professor_pending': '교수회원 대기'
     }
@@ -280,7 +281,7 @@ export default function UserManagementPage() {
   const getRoleColor = (role: string) => {
     const colors = {
       'admin': 'bg-purple-100 text-purple-800',
-      'user': 'bg-blue-100 text-blue-800',
+      'customer': 'bg-blue-100 text-blue-800',
       'professor': 'bg-green-100 text-green-800',
       'professor_pending': 'bg-yellow-100 text-yellow-800'
     }
@@ -422,7 +423,7 @@ export default function UserManagementPage() {
                       <td className="py-3 px-4">
                         <div className="flex items-center">
                           <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-white text-sm font-medium mr-3">
-                            {(user.username || user.email).charAt(0).toUpperCase()}
+                            {(user.username || user.email || 'U').charAt(0).toUpperCase()}
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900">
@@ -452,7 +453,7 @@ export default function UserManagementPage() {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm text-gray-500">
-                        {formatDate(user.created_at)}
+                        {user.created_at ? formatDate(user.created_at) : '-'}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center space-x-2">
@@ -516,8 +517,8 @@ export default function UserManagementPage() {
                 <label className={`flex items-center ${selectedUser.professor_application_date ? 'opacity-50' : ''}`}>
                   <input
                     type="radio"
-                    value="user"
-                    checked={newRole === 'user'}
+                    value="customer"
+                    checked={newRole === 'customer'}
                     onChange={(e) => setNewRole(e.target.value as any)}
                     disabled={!!selectedUser.professor_application_date}
                     className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 mr-3 disabled:opacity-50"

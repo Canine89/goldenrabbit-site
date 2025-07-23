@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseClient } from '../../lib/supabase-client'
@@ -8,6 +8,13 @@ import SmartImage from '../../components/SmartImage'
 import Loading from '../../components/ui/Loading'
 import Button from '../../components/ui/Button'
 import DocsImporter from '../../components/admin/DocsImporter'
+import { 
+  createBook, 
+  updateBook, 
+  deleteBook, 
+  toggleBookStatus, 
+  getAdminBooks 
+} from '../../../lib/actions/book-actions'
 
 interface Book {
   id: string
@@ -67,6 +74,8 @@ export default function BookManagementPage() {
   const [editingBook, setEditingBook] = useState<Book | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('전체')
   const [selectedStatus, setSelectedStatus] = useState('전체')
+  const [isPending, startTransition] = useTransition()
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [formData, setFormData] = useState<FormData>({
     title: '',
     author: '',
@@ -145,15 +154,14 @@ export default function BookManagementPage() {
       setLoading(true)
       setError(null)
       
-      const { data, error } = await supabase
-        .from('books')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const result = await getAdminBooks(1, 1000) // 모든 책 가져오기
       
-      if (error) throw error
+      if (!result.success) {
+        throw new Error(result.error)
+      }
       
-      setBooks(data || [])
-      setFilteredBooks(data || [])
+      setBooks(result.data.books)
+      setFilteredBooks(result.data.books)
     } catch (error: any) {
       setError(`도서 목록을 불러오는데 실패했습니다: ${error.message}`)
     } finally {
@@ -290,59 +298,57 @@ export default function BookManagementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError(null)
     
-    try {
-      // 가로/세로를 합쳐서 size 문자열 생성
-      const sizeString = (formData.width && formData.height) 
-        ? `${formData.width} x ${formData.height}`
-        : ''
-      
-      const bookData = {
-        title: formData.title,
-        author: formData.author,
-        category: formData.category,
-        price: parseInt(formData.price),
-        description: formData.description,
-        publisher_review: formData.publisher_review,
-        testimonials: formData.testimonials,
-        cover_image_url: formData.cover_image_url,
-        isbn: formData.isbn,
-        page_count: formData.page_count ? parseInt(formData.page_count) : null,
-        size: sizeString,
-        publication_date: formData.publication_date || null,
-        table_of_contents: formData.table_of_contents,
-        author_bio: formData.author_bio,
-        errata_link: formData.errata_link || null,
-        error_report_link: formData.error_report_link || null,
-        is_featured: formData.is_featured,
-        is_active: true,
-        yes24_link: formData.yes24_link || null,
-        kyobo_link: formData.kyobo_link || null,
-        aladin_link: formData.aladin_link || null,
+    startTransition(async () => {
+      try {
+        // FormData 객체 생성
+        const formDataObj = new FormData()
+        
+        // 가로/세로를 합쳐서 size 문자열 생성
+        const sizeString = (formData.width && formData.height) 
+          ? `${formData.width} x ${formData.height}`
+          : ''
+        
+        formDataObj.append('title', formData.title)
+        formDataObj.append('author', formData.author)
+        formDataObj.append('category', formData.category)
+        formDataObj.append('price', formData.price)
+        formDataObj.append('description', formData.description)
+        formDataObj.append('publisher_review', formData.publisher_review)
+        formDataObj.append('testimonials', formData.testimonials)
+        formDataObj.append('cover_image_url', formData.cover_image_url)
+        formDataObj.append('isbn', formData.isbn)
+        formDataObj.append('page_count', formData.page_count)
+        formDataObj.append('size', sizeString)
+        formDataObj.append('publication_date', formData.publication_date)
+        formDataObj.append('table_of_contents', formData.table_of_contents)
+        formDataObj.append('author_bio', formData.author_bio)
+        formDataObj.append('is_featured', formData.is_featured.toString())
+        formDataObj.append('is_active', '1')
+        formDataObj.append('yes24_link', formData.yes24_link)
+        formDataObj.append('kyobo_link', formData.kyobo_link)
+        formDataObj.append('aladin_link', formData.aladin_link)
+
+        let result
+        if (editingBook) {
+          formDataObj.append('id', editingBook.id)
+          result = await updateBook(formDataObj)
+        } else {
+          result = await createBook(formDataObj)
+        }
+
+        if (!result.success) {
+          throw new Error(result.error)
+        }
+
+        alert(result.message || (editingBook ? '도서가 성공적으로 수정되었습니다.' : '도서가 성공적으로 등록되었습니다.'))
+        resetForm()
+        fetchBooks()
+      } catch (error: any) {
+        setSubmitError(`도서 저장 중 오류가 발생했습니다: ${error.message}`)
       }
-
-      if (editingBook) {
-        const { error } = await supabase
-          .from('books')
-          .update(bookData)
-          .eq('id', editingBook.id)
-
-        if (error) throw error
-        alert('도서가 성공적으로 수정되었습니다.')
-      } else {
-        const { error } = await supabase
-          .from('books')
-          .insert([bookData])
-
-        if (error) throw error
-        alert('도서가 성공적으로 등록되었습니다.')
-      }
-
-      resetForm()
-      fetchBooks()
-    } catch (error: any) {
-      alert(`도서 저장 중 오류가 발생했습니다: ${error.message}`)
-    }
+    })
   }
 
   const handleDelete = async (book: Book) => {
@@ -350,19 +356,20 @@ export default function BookManagementPage() {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('books')
-        .delete()
-        .eq('id', book.id)
+    startTransition(async () => {
+      try {
+        const result = await deleteBook(book.id)
 
-      if (error) throw error
+        if (!result.success) {
+          throw new Error(result.error)
+        }
 
-      alert('도서가 삭제되었습니다.')
-      fetchBooks()
-    } catch (error: any) {
-      alert(`도서 삭제 중 오류가 발생했습니다: ${error.message}`)
-    }
+        alert(result.message || '도서가 삭제되었습니다.')
+        fetchBooks()
+      } catch (error: any) {
+        alert(`도서 삭제 중 오류가 발생했습니다: ${error.message}`)
+      }
+    })
   }
 
   const handleToggleActive = async (book: Book) => {
@@ -373,19 +380,20 @@ export default function BookManagementPage() {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('books')
-        .update({ is_active: newStatus })
-        .eq('id', book.id)
+    startTransition(async () => {
+      try {
+        const result = await toggleBookStatus(book.id, newStatus)
 
-      if (error) throw error
+        if (!result.success) {
+          throw new Error(result.error)
+        }
 
-      alert(`도서가 ${action}되었습니다.`)
-      fetchBooks()
-    } catch (error: any) {
-      alert(`도서 ${action} 중 오류가 발생했습니다: ${error.message}`)
-    }
+        alert(result.message || `도서가 ${action}되었습니다.`)
+        fetchBooks()
+      } catch (error: any) {
+        alert(`도서 ${action} 중 오류가 발생했습니다: ${error.message}`)
+      }
+    })
   }
 
   const formatPrice = (price: number) => {
@@ -466,6 +474,12 @@ export default function BookManagementPage() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* 오류 메시지 표시 */}
+                {submitError && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-sm">{submitError}</p>
+                  </div>
+                )}
                 {/* 보도자료 불러오기 */}
                 <DocsImporter onBookInfoExtracted={handleBookInfoExtracted} />
 
@@ -778,8 +792,8 @@ export default function BookManagementPage() {
                   >
                     취소
                   </button>
-                  <Button type="submit" className="px-6 py-2">
-                    {editingBook ? '수정' : '등록'}
+                  <Button type="submit" className="px-6 py-2" disabled={isPending}>
+                    {isPending ? '처리 중...' : (editingBook ? '수정' : '등록')}
                   </Button>
                 </div>
               </form>

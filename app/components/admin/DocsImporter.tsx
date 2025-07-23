@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { fetchGoogleDocText } from '../../../lib/actions/google-docs-actions'
 
 interface BookInfo {
   title: string
@@ -65,21 +66,17 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
       throw new Error('문서 URL을 입력해주세요.')
     }
 
-    // 서버사이드 API를 통해 구글 문서 가져오기
-    const response = await fetch('/api/fetch-google-doc', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url: documentUrl })
-    })
+    // Server Action을 통해 구글 문서 가져오기
+    const formData = new FormData()
+    formData.append('url', documentUrl)
+    
+    const result = await fetchGoogleDocText(formData)
 
-    if (!response.ok) {
-      const errorData = await response.json()
-      throw new Error(errorData.error || '문서를 가져오는데 실패했습니다.')
+    if (!result.success) {
+      throw new Error(result.error || '문서를 가져우는데 실패했습니다.')
     }
 
-    const { text } = await response.json()
+    const text = result.data.text
     
     // 텍스트 파싱
     const bookInfo = parseBookInfoFromText(text)

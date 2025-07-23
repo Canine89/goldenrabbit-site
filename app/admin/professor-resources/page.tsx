@@ -1,11 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { createSupabaseClient } from '../../lib/supabase-client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Button from '../../components/ui/Button'
 import Loading from '../../components/ui/Loading'
+import { 
+  createProfessorResource, 
+  updateProfessorResource, 
+  deleteProfessorResource, 
+  toggleResourceStatus, 
+  getAdminResources 
+} from '../../../lib/actions/resource-actions'
+import { getAdminBooks } from '../../../lib/actions/book-actions'
 
 type ResourceType = 'lecture_slides' | 'source_code' | 'book_info' | 'copyright'
 
@@ -16,11 +24,14 @@ interface ProfessorResource {
   title: string
   description?: string
   file_url?: string
-  download_count: number
+  download_count?: number
   is_active: boolean
   created_at: string
+  updated_at?: string
   books?: {
+    id?: string
     title: string
+    author?: string
   } | null
 }
 
@@ -41,6 +52,8 @@ export default function ProfessorResourcesPage() {
   const [selectedType, setSelectedType] = useState('전체')
   const [selectedBook, setSelectedBook] = useState('전체')
   const [selectedStatus, setSelectedStatus] = useState('전체')
+  const [isPending, startTransition] = useTransition()
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     book_id: '',
     resource_type: 'lecture_slides' as ResourceType,
@@ -102,52 +115,14 @@ export default function ProfessorResourcesPage() {
       setLoading(true)
       setError(null)
       
-      // 먼저 professor_resources 데이터 조회
-      const { data: resourcesData, error: resourcesError } = await supabase
-        .from('professor_resources')
-        .select(`
-          id,
-          book_id,
-          resource_type,
-          title,
-          file_url,
-          download_count,
-          is_active,
-          created_at
-        `)
-        .order('created_at', { ascending: false })
-
-      if (resourcesError) throw resourcesError
+      const result = await getAdminResources(1, 1000) // 모든 자료 가져오기
       
-      
-      // book_id가 있는 항목들의 도서 정보 따로 조회
-      const resourcesWithBooks: ProfessorResource[] = []
-      
-      for (const resource of resourcesData || []) {
-        let bookInfo = null
-        
-        if (resource.book_id) {
-          const { data: bookData, error: bookError } = await supabase
-            .from('books')
-            .select('title')
-            .eq('id', resource.book_id)
-            .single()
-          
-          if (!bookError && bookData) {
-            bookInfo = bookData
-          } else {
-          }
-        }
-        
-        resourcesWithBooks.push({
-          ...resource,
-          books: bookInfo
-        })
+      if (!result.success) {
+        throw new Error(result.error)
       }
       
-      
-      setResources(resourcesWithBooks)
-      setFilteredResources(resourcesWithBooks)
+      setResources(result.data.resources)
+      setFilteredResources(result.data.resources)
     } catch (error: any) {
       setError(`자료 목록을 불러오는데 실패했습니다: ${error.message}`)
     } finally {
@@ -157,14 +132,15 @@ export default function ProfessorResourcesPage() {
 
   const fetchBooks = async () => {
     try {
-      const { data, error } = await supabase
-        .from('books')
-        .select('id, title')
-        .eq('is_active', true)
-        .order('title')
-
-      if (error) throw error
-      setBooks(data || [])
+      const result = await getAdminBooks(1, 1000)
+      
+      if (result.success) {
+        // 활성 도서만 필터링
+        const activeBooks = result.data.books.filter(book => book.is_active)
+        setBooks(activeBooks)
+      } else {
+        console.error('도서 조회 실패:', result.error)
+      }
     } catch (error) {
       console.error('도서 조회 실패:', error)
     }
@@ -208,57 +184,37 @@ export default function ProfessorResourcesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError(null)
     
-    try {
-      
-      // 자료 유형에 따른 자동 제목 생성
-      const titleMap = {
-        lecture_slides: '강의교안',
-        source_code: '소스코드',
-        book_info: '도서정보',
-        copyright: '판권'
-      }
-      
-      const title = titleMap[formData.resource_type]
-      
-      if (editingResource) {
+    startTransition(async () => {
+      try {
+        // FormData 객체 생성
+        const formDataObj = new FormData()
         
-        const { error } = await supabase
-          .from('professor_resources')
-          .update({
-            book_id: formData.book_id || null,
-            resource_type: formData.resource_type,
-            title: title,
-            file_url: formData.file_url,
-            is_active: formData.is_active
-          })
-          .eq('id', editingResource.id)
+        formDataObj.append('book_id', formData.book_id)
+        formDataObj.append('resource_type', formData.resource_type)
+        formDataObj.append('file_url', formData.file_url)
+        formDataObj.append('is_active', formData.is_active.toString())
 
-        if (error) throw error
-        alert('자료가 성공적으로 수정되었습니다.')
-      } else {
-        
-        const { data, error } = await supabase
-          .from('professor_resources')
-          .insert([{
-            book_id: formData.book_id || null,
-            resource_type: formData.resource_type,
-            title: title,
-            file_url: formData.file_url,
-            is_active: formData.is_active,
-            download_count: 0
-          }])
-          .select()
+        let result
+        if (editingResource) {
+          formDataObj.append('id', editingResource.id)
+          result = await updateProfessorResource(formDataObj)
+        } else {
+          result = await createProfessorResource(formDataObj)
+        }
 
-        if (error) throw error
-        alert('자료가 성공적으로 등록되었습니다.')
+        if (!result.success) {
+          throw new Error(result.error)
+        }
+
+        alert(result.message || (editingResource ? '자료가 성공적으로 수정되었습니다.' : '자료가 성공적으로 등록되었습니다.'))
+        resetForm()
+        fetchResources()
+      } catch (error: any) {
+        setSubmitError(`자료 저장 중 오류가 발생했습니다: ${error.message}`)
       }
-
-      resetForm()
-      fetchResources()
-    } catch (error: any) {
-      alert(`자료 저장 중 오류가 발생했습니다: ${error.message}`)
-    }
+    })
   }
 
   const handleEdit = (resource: ProfessorResource) => {
@@ -275,19 +231,20 @@ export default function ProfessorResourcesPage() {
   const handleDelete = async (id: string) => {
     if (!confirm('정말 삭제하시겠습니까?')) return
 
-    try {
-      const { error } = await supabase
-        .from('professor_resources')
-        .delete()
-        .eq('id', id)
+    startTransition(async () => {
+      try {
+        const result = await deleteProfessorResource(id)
 
-      if (error) throw error
-      
-      alert('자료가 삭제되었습니다.')
-      fetchResources()
-    } catch (error: any) {
-      alert(`자료 삭제 중 오류가 발생했습니다: ${error.message}`)
-    }
+        if (!result.success) {
+          throw new Error(result.error)
+        }
+
+        alert(result.message || '자료가 삭제되었습니다.')
+        fetchResources()
+      } catch (error: any) {
+        alert(`자료 삭제 중 오류가 발생했습니다: ${error.message}`)
+      }
+    })
   }
 
   const handleToggleActive = async (resource: ProfessorResource) => {
@@ -298,19 +255,20 @@ export default function ProfessorResourcesPage() {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('professor_resources')
-        .update({ is_active: newStatus })
-        .eq('id', resource.id)
+    startTransition(async () => {
+      try {
+        const result = await toggleResourceStatus(resource.id, newStatus)
 
-      if (error) throw error
+        if (!result.success) {
+          throw new Error(result.error)
+        }
 
-      alert(`자료가 ${action}되었습니다.`)
-      fetchResources()
-    } catch (error: any) {
-      alert(`자료 ${action} 중 오류가 발생했습니다: ${error.message}`)
-    }
+        alert(result.message || `자료가 ${action}되었습니다.`)
+        fetchResources()
+      } catch (error: any) {
+        alert(`자료 ${action} 중 오류가 발생했습니다: ${error.message}`)
+      }
+    })
   }
 
   const getResourceTypeLabel = (type: string) => {

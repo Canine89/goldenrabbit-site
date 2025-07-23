@@ -37,6 +37,109 @@
 4. 문서화는 한글로 작성
 5. 비용 효율성을 최우선으로 고려
 6. **테스트 정책**: 작업 완료 후 자동으로 테스트하지 않음. 사용자가 명시적으로 요청할 때만 테스트 수행
+7. **Server Actions 우선 정책**: API 핸들러 대신 Next.js Server Actions를 우선적으로 사용
+
+## Server Actions 개발 가이드라인
+
+### 1. Server Actions 우선 사용
+- **원칙**: 새로운 서버 사이드 로직은 API 핸들러(`/api/`) 대신 Server Actions(`/lib/actions/`)를 사용
+- **이유**: 타입 안전성, 자동 재검증, 더 나은 성능, 보안 강화
+
+### 2. Server Actions 구조
+```
+/lib/actions/
+├── types.ts          # 공통 타입 정의
+├── utils.ts           # 공통 유틸리티 함수 (Supabase 클라이언트, 권한 확인 등)
+├── schemas.ts         # Zod 검증 스키마
+├── book-actions.ts    # 도서 관리 관련 Server Actions
+├── article-actions.ts # 아티클 관리 관련 Server Actions
+├── user-actions.ts    # 사용자 관리 관련 Server Actions
+└── resource-actions.ts # 교수 자료 관리 관련 Server Actions
+```
+
+### 3. Server Actions 작성 규칙
+1. **파일 상단에 `'use server'` 지시어 필수**
+2. **모든 입력 데이터는 Zod 스키마로 검증**
+3. **권한 확인은 `checkAdminPermission()` 등 유틸리티 함수 사용**
+4. **일관된 응답 형식**: `ActionResult<T>` 타입 사용
+5. **에러 처리**: `createErrorResponse()`, `createSuccessResponse()` 사용
+6. **페이지 재검증**: `revalidatePath()` 적절히 사용
+
+### 4. 표준 Server Action 템플릿
+```typescript
+'use server'
+
+import { revalidatePath } from 'next/cache'
+import { Schema } from './schemas'
+import { 
+  createServerSupabaseClient,
+  checkAdminPermission,
+  createSuccessResponse,
+  createErrorResponse,
+  logError
+} from './utils'
+import { ActionResult } from './types'
+
+export async function actionName(formData: FormData): Promise<ActionResult<T>> {
+  try {
+    // 권한 확인
+    const isAdmin = await checkAdminPermission()
+    if (!isAdmin) {
+      return createErrorResponse('관리자 권한이 필요합니다')
+    }
+
+    // 데이터 변환 및 검증
+    const rawData = Object.fromEntries(formData.entries())
+    const validatedData = Schema.parse(rawData)
+
+    // Supabase 작업
+    const supabase = await createServerSupabaseClient()
+    const { data, error } = await supabase
+      .from('table')
+      .insert(validatedData)
+
+    if (error) {
+      logError('actionName', error)
+      return createErrorResponse('작업에 실패했습니다', error.message)
+    }
+
+    // 페이지 재검증
+    revalidatePath('/admin/page')
+    
+    return createSuccessResponse(data, '성공적으로 처리되었습니다')
+
+  } catch (error) {
+    logError('actionName', error)
+    return createErrorResponse('처리 중 오류가 발생했습니다')
+  }
+}
+```
+
+### 5. 클라이언트에서 Server Actions 사용
+```typescript
+// useTransition 훅 사용 (로딩 상태 관리)
+const [isPending, startTransition] = useTransition()
+
+const handleSubmit = async (formData: FormData) => {
+  startTransition(async () => {
+    const result = await serverAction(formData)
+    
+    if (!result.success) {
+      setError(result.error)
+      return
+    }
+    
+    // 성공 처리
+    alert(result.message)
+    router.refresh() // 필요시
+  })
+}
+```
+
+### 6. 기존 API 핸들러 마이그레이션 지침
+- 기존 `/api/` 경로의 핸들러를 발견하면 Server Actions로 마이그레이션 권장
+- 외부 API 호출이나 웹훅 등 특수한 경우만 API 핸들러 유지
+- 마이그레이션 시 기능 동등성과 타입 안전성 확보
 
 ## 데이터베이스 스키마 변경 시 필수 체크리스트
 

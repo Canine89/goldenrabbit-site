@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseClient } from '../../lib/supabase-client'
@@ -8,19 +8,29 @@ import SmartImage from '../../components/SmartImage'
 import Loading from '../../components/ui/Loading'
 import Button from '../../components/ui/Button'
 import RichTextEditor from '../../components/RichTextEditor'
+import { 
+  createArticle, 
+  updateArticle, 
+  deleteArticle, 
+  toggleArticleStatus, 
+  getAdminArticles 
+} from '../../../lib/actions/article-actions'
 
 interface Article {
   id: string
   title: string
   content?: string
   excerpt?: string
+  summary?: string
   featured_image_url?: string
   category: string
   tags?: string[]
   is_featured: boolean
   is_published: boolean
   created_at: string
-  updated_at: string
+  updated_at?: string
+  view_count?: number
+  author?: string
 }
 
 interface FormData {
@@ -45,6 +55,8 @@ export default function ArticleManagementPage() {
   const [editingArticle, setEditingArticle] = useState<Article | null>(null)
   const [selectedCategory, setSelectedCategory] = useState('전체')
   const [selectedStatus, setSelectedStatus] = useState('전체')
+  const [isPending, startTransition] = useTransition()
+  const [submitError, setSubmitError] = useState<string | null>(null)
   const [formData, setFormData] = useState<FormData>({
     title: '',
     excerpt: '',
@@ -110,15 +122,14 @@ export default function ArticleManagementPage() {
       setLoading(true)
       setError(null)
       
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const result = await getAdminArticles(1, 1000) // 모든 아티클 가져오기
       
-      if (error) throw error
+      if (!result.success) {
+        throw new Error(result.error)
+      }
       
-      setArticles(data || [])
-      setFilteredArticles(data || [])
+      setArticles(result.data.articles)
+      setFilteredArticles(result.data.articles)
     } catch (error: any) {
       setError(`아티클 목록을 불러오는데 실패했습니다: ${error.message}`)
     } finally {
@@ -173,70 +184,63 @@ export default function ArticleManagementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setSubmitError(null)
     
-    try {
-      // 현재 로그인한 사용자 정보 가져오기
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      if (userError || !user) {
-        throw new Error('사용자 정보를 가져올 수 없습니다.')
+    startTransition(async () => {
+      try {
+        // FormData 객체 생성
+        const formDataObj = new FormData()
+        
+        formDataObj.append('title', formData.title)
+        formDataObj.append('summary', formData.excerpt) // excerpt -> summary
+        formDataObj.append('content', formData.content)
+        formDataObj.append('featured_image_url', formData.featured_image_url)
+        formDataObj.append('category', formData.category)
+        formDataObj.append('tags', formData.tags)
+        formDataObj.append('is_featured', formData.is_featured.toString())
+        formDataObj.append('is_published', formData.is_published.toString())
+        formDataObj.append('author', 'admin') // 기본 작성자
+
+        let result
+        if (editingArticle) {
+          formDataObj.append('id', editingArticle.id)
+          result = await updateArticle(formDataObj)
+        } else {
+          result = await createArticle(formDataObj)
+        }
+
+        if (!result.success) {
+          throw new Error(result.error)
+        }
+
+        alert(result.message || (editingArticle ? '아티클이 성공적으로 수정되었습니다.' : '아티클이 성공적으로 등록되었습니다.'))
+        resetForm()
+        fetchArticles()
+      } catch (error: any) {
+        setSubmitError(`아티클 저장 중 오류가 발생했습니다: ${error.message}`)
       }
-
-      const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
-      
-      const articleData = {
-        title: formData.title,
-        excerpt: formData.excerpt,
-        content: formData.content,
-        featured_image_url: formData.featured_image_url,
-        category: formData.category,
-        tags: tagsArray,
-        is_featured: formData.is_featured,
-        is_published: formData.is_published,
-        author: user.id, // 현재 로그인한 사용자 ID를 author로 설정
-      }
-
-      if (editingArticle) {
-        const { error } = await supabase
-          .from('articles')
-          .update(articleData)
-          .eq('id', editingArticle.id)
-
-        if (error) throw error
-        alert('아티클이 성공적으로 수정되었습니다.')
-      } else {
-        const { error } = await supabase
-          .from('articles')
-          .insert([articleData])
-
-        if (error) throw error
-        alert('아티클이 성공적으로 등록되었습니다.')
-      }
-
-      resetForm()
-      fetchArticles()
-    } catch (error: any) {
-      alert(`아티클 저장 중 오류가 발생했습니다: ${error.message}`)
-    }
+    })
   }
 
   const handleDelete = async (article: Article) => {
-    if (!confirm(`"${article.title}" 아티클을 완전히 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+    if (!confirm(`"${article.title}" 아티클을 완전히 삭제하시겠습니까?\n\n쩴 작업은 되돌릴 수 없습니다.`)) {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('articles')
-        .delete()
-        .eq('id', article.id)
+    startTransition(async () => {
+      try {
+        const result = await deleteArticle(article.id)
 
-      if (error) throw error
+        if (!result.success) {
+          throw new Error(result.error)
+        }
 
-      alert('아티클이 삭제되었습니다.')
-      fetchArticles()
-    } catch (error: any) {
-      alert(`아티클 삭제 중 오류가 발생했습니다: ${error.message}`)
-    }
+        alert(result.message || '아티클이 삭제되었습니다.')
+        fetchArticles()
+      } catch (error: any) {
+        alert(`아티클 삭제 중 오류가 발생했습니다: ${error.message}`)
+      }
+    })
   }
 
   const handleTogglePublished = async (article: Article) => {
@@ -247,19 +251,20 @@ export default function ArticleManagementPage() {
       return
     }
 
-    try {
-      const { error } = await supabase
-        .from('articles')
-        .update({ is_published: newStatus })
-        .eq('id', article.id)
+    startTransition(async () => {
+      try {
+        const result = await toggleArticleStatus(article.id, newStatus)
 
-      if (error) throw error
+        if (!result.success) {
+          throw new Error(result.error)
+        }
 
-      alert(`아티클이 ${action}되었습니다.`)
-      fetchArticles()
-    } catch (error: any) {
-      alert(`아티클 ${action} 중 오류가 발생했습니다: ${error.message}`)
-    }
+        alert(result.message || `아티클이 ${action}되었습니다.`)
+        fetchArticles()
+      } catch (error: any) {
+        alert(`아티클 ${action} 중 오류가 발생했습니다: ${error.message}`)
+      }
+    })
   }
 
   const formatDate = (dateString: string) => {
