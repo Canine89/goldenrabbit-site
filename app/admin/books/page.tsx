@@ -193,6 +193,8 @@ export default function BookManagementPage() {
       publication_date: '',
       table_of_contents: '',
       author_bio: '',
+      errata_link: '',
+      error_report_link: '',
       is_featured: false,
       yes24_link: '',
       kyobo_link: '',
