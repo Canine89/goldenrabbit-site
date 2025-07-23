@@ -38,6 +38,76 @@
 5. 비용 효율성을 최우선으로 고려
 6. **테스트 정책**: 작업 완료 후 자동으로 테스트하지 않음. 사용자가 명시적으로 요청할 때만 테스트 수행
 
+## 데이터베이스 스키마 변경 시 필수 체크리스트
+
+### 1. TypeScript 인터페이스 업데이트
+데이터베이스 테이블에 컬럼을 추가/수정/삭제할 때는 반드시 관련된 모든 TypeScript 인터페이스를 업데이트해야 함
+
+#### 체크 포인트:
+- **인터페이스 정의**: 테이블 구조와 일치하는 interface 업데이트
+- **FormData 타입**: 관리자 폼에서 사용하는 FormData 인터페이스 업데이트
+- **초기화 객체**: formData 초기값, resetForm 함수 등의 객체 초기화 부분
+- **API 요청/응답**: 데이터베이스 쿼리 결과를 받는 부분의 타입
+
+#### 주요 파일들:
+- `/app/admin/books/page.tsx` - Book, FormData 인터페이스
+- `/app/books/[id]/page.tsx` - Book 인터페이스  
+- `/app/admin/articles/page.tsx` - Article, FormData 인터페이스
+- 기타 해당 테이블을 사용하는 모든 컴포넌트
+
+### 2. 데이터베이스 변경 프로세스
+1. **마이그레이션 파일 작성**: `/supabase/migrations/` 폴더에 SQL 파일 생성
+2. **TypeScript 인터페이스 업데이트**: 모든 관련 interface 수정
+3. **폼 초기화 함수 업데이트**: resetForm, 초기 formData 등
+4. **API 엔드포인트 업데이트**: 필요시 백엔드 쿼리 수정
+5. **테스트**: 로컬에서 TypeScript 컴파일 확인 (`npm run build`)
+6. **배포**: SQL 실행 → 코드 푸시 순서로 진행
+
+### 3. 빌드 오류 방지 체크리스트
+- [ ] 새 컬럼이 모든 관련 TypeScript 인터페이스에 추가되었는가?
+- [ ] FormData 초기화 객체에 새 필드가 포함되었는가?
+- [ ] resetForm 함수에 새 필드 초기값이 설정되었는가?
+- [ ] 데이터베이스 쿼리에서 새 컬럼을 select/insert/update 하는가?
+- [ ] 선택적(optional) 필드는 `?` 타입으로 정의되었는가?
+
+### 4. 자주 발생하는 오류 패턴
+- **"missing properties" 오류**: FormData 인터페이스와 초기화 객체 불일치
+- **"Type error" 오류**: 데이터베이스 쿼리 결과와 인터페이스 불일치
+- **런타임 오류**: 컬럼이 존재하지 않는데 코드에서 참조하는 경우
+
+### 5. 예시: books 테이블에 새 컬럼 추가
+```sql
+-- 1. 마이그레이션 파일
+ALTER TABLE books ADD COLUMN new_field TEXT;
+```
+
+```typescript
+// 2. 인터페이스 업데이트
+interface Book {
+  // ... 기존 필드들
+  new_field?: string  // 새 필드 추가
+}
+
+interface FormData {
+  // ... 기존 필드들  
+  new_field: string  // 새 필드 추가
+}
+
+// 3. 초기화 객체 업데이트  
+const initialFormData = {
+  // ... 기존 필드들
+  new_field: '',  // 새 필드 초기값
+}
+
+// 4. resetForm 함수 업데이트
+const resetForm = () => {
+  setFormData({
+    // ... 기존 필드들
+    new_field: '',  // 새 필드 초기값
+  })
+}
+```
+
 ## 기능 구분
 - **도서 페이지**: 구매 기능 없음, 정보 제공 및 온라인 서점 링크만
 - **토끼상점**: 관리자가 등록한 특별 상품 판매 (실제 구매 기능 포함)
@@ -64,6 +134,8 @@
 - publication_date (date): 출간일
 - table_of_contents (text): 목차
 - author_bio (text): 저자 소개
+- errata_link (text): 정오표 링크 URL
+- error_report_link (text): 오탈자 신고 링크 URL
 - is_featured (boolean): 추천 도서 여부
 - is_active (boolean): 활성화 상태
 - yes24_link, kyobo_link, aladin_link, ridibooks_link: 온라인 서점 링크
