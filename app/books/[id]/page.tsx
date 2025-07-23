@@ -283,7 +283,7 @@ export default function BookDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* 상단 네비게이션 */}
         <div className="mb-6">
           <Link href="/books" className="inline-flex items-center text-primary-600 hover:text-primary-700">
@@ -294,10 +294,10 @@ export default function BookDetailPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 mb-8 lg:mb-12">
           {/* 도서 이미지 */}
           <div className="lg:col-span-2 flex justify-center lg:justify-end">
-            <div className="w-full max-w-md lg:max-w-none">
+            <div className="w-full max-w-xs sm:max-w-md lg:max-w-none">
               <div className="w-full h-96 lg:h-[480px] bg-white rounded-lg shadow-lg overflow-hidden relative">
                 <SmartImage
                   src={book.cover_image_url}
@@ -387,13 +387,13 @@ export default function BookDetailPage() {
               {(book.errata_link || book.error_report_link) && (
                 <div className="pt-6">
                   <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">정오표 및 오탈자 신고</h3>
-                  <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex flex-col gap-3">
                     {book.errata_link && (
                       <a
                         href={book.errata_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                        className="inline-flex items-center justify-center px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors min-h-[48px] text-center"
                       >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -406,7 +406,7 @@ export default function BookDetailPage() {
                         href={book.error_report_link}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors"
+                        className="inline-flex items-center justify-center px-4 py-3 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-colors min-h-[48px] text-center"
                       >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.99-.833-2.46 0L5.354 16.5c-.77.833.192 2.5 1.732 2.5z" />
@@ -421,7 +421,7 @@ export default function BookDetailPage() {
               {/* 온라인 서점 링크 */}
               <div className="pt-6">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">온라인 서점에서 구매하기</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   {[
                     { name: 'YES24', url: (book as any)?.yes24_link, color: 'bg-blue-600' },
                     { name: '교보문고', url: (book as any)?.kyobo_link, color: 'bg-green-600' },
@@ -433,7 +433,7 @@ export default function BookDetailPage() {
                         href={store.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className={`${store.color} text-white text-center py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-all hover:scale-105 flex items-center justify-center`}
+                        className={`${store.color} text-white text-center py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-all hover:scale-105 flex items-center justify-center min-h-[48px]`}
                       >
                         <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -469,7 +469,7 @@ export default function BookDetailPage() {
         {/* 탭 섹션 */}
         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
           <div className="border-b border-gray-200">
-            <nav className="flex">
+            <nav className="flex overflow-x-auto scrollbar-hide">
               {[
                 { id: 'info', name: '책 소개' },
                 { id: 'publisher_review', name: '출판사 리뷰' },
@@ -480,7 +480,7 @@ export default function BookDetailPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`py-4 px-6 font-medium text-sm border-b-2 transition-colors ${
+                  className={`flex-shrink-0 py-3 px-4 sm:py-4 sm:px-6 min-h-[48px] font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-primary-500 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -492,7 +492,7 @@ export default function BookDetailPage() {
             </nav>
           </div>
 
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {activeTab === 'info' && (
               <div>
                 <h3 className="text-lg font-semibold mb-4">책 소개</h3>

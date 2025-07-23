@@ -49,8 +49,8 @@ export default function Header({ user, profile, loading }: HeaderProps) {
         <div className="flex justify-between items-center h-16">
           {/* 로고 */}
           <Link href="/" className="flex items-center group py-2">
-            <Image src={Logo} alt="골든래빗 로고" width={56} height={56} className="mr-2" />
-            <div className="text-2xl font-bold text-primary-500 group-hover:text-white transition-colors duration-200">
+            <Image src={Logo} alt="골든래빗 로고" width={40} height={40} className="mr-2 sm:w-[56px] sm:h-[56px]" />
+            <div className="text-lg sm:text-2xl font-bold text-primary-500 group-hover:text-white transition-colors duration-200">
               골든래빗
             </div>
           </Link>
@@ -85,16 +85,16 @@ export default function Header({ user, profile, loading }: HeaderProps) {
           </nav>
 
           {/* 우측 액션 버튼들 */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2">
             {/* 검색 아이콘 */}
-            <button className="p-2 text-white hover:text-primary-500 hover:bg-gray-800 rounded-lg transition-all duration-200">
+            <button className="p-2 sm:p-3 text-white hover:text-primary-500 hover:bg-gray-800 rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </button>
 
-            {/* 장바구니 아이콘 */}
-            <Link href="/cart" className="relative p-2 text-white hover:text-blue-500 hover:bg-gray-800 rounded-lg transition-all duration-200">
+            {/* 장바구니 아이콘 - 모바일에서 숨김 */}
+            <Link href="/cart" className="relative p-2 sm:p-3 text-white hover:text-blue-500 hover:bg-gray-800 rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center hidden sm:flex">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m1.6 8L5 5H3m4 8v6a2 2 0 002 2h6a2 2 0 002-2v-6" />
               </svg>
@@ -111,7 +111,7 @@ export default function Header({ user, profile, loading }: HeaderProps) {
 
             {/* 모바일 메뉴 버튼 */}
             <button
-              className="md:hidden p-2 text-white hover:text-primary-500 hover:bg-gray-800 rounded-lg transition-all duration-200"
+              className="md:hidden p-2 text-white hover:text-primary-500 hover:bg-gray-800 rounded-lg transition-all duration-200 min-w-[44px] min-h-[44px] flex items-center justify-center"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,7 +132,7 @@ export default function Header({ user, profile, loading }: HeaderProps) {
                     href={item.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block px-3 py-2 text-base font-medium transition-colors rounded-lg text-white hover:text-primary-500 hover:bg-gray-800"
+                    className="block px-4 py-3 text-base font-medium transition-colors rounded-lg text-white hover:text-primary-500 hover:bg-gray-800 min-h-[44px] flex items-center"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {item.name}
@@ -141,7 +141,7 @@ export default function Header({ user, profile, loading }: HeaderProps) {
                   <Link
                     key={item.name}
                     href={item.href}
-                    className={`block px-3 py-2 text-base font-medium transition-colors rounded-lg ${
+                    className={`block px-4 py-3 text-base font-medium transition-colors rounded-lg min-h-[44px] flex items-center ${
                       isActiveRoute(item.href)
                         ? 'text-primary-500 bg-gray-800'
                         : 'text-white hover:text-primary-500 hover:bg-gray-800'
@@ -157,20 +157,20 @@ export default function Header({ user, profile, loading }: HeaderProps) {
               <div className="pt-4 border-t border-gray-700">
                 {user ? (
                   <div className="space-y-1">
-                    <div className="px-3 py-2 text-sm text-white bg-gray-800 rounded-lg">
+                    <div className="px-4 py-3 text-sm text-white bg-gray-800 rounded-lg min-h-[44px] flex items-center">
                       {user.user_metadata?.full_name || user.email}
                     </div>
                     <Link
                       href="/profile"
-                      className="block px-3 py-2 text-sm text-white hover:text-primary-500 hover:bg-gray-800 rounded-lg transition-colors"
+                      className="block px-4 py-3 text-sm text-white hover:text-primary-500 hover:bg-gray-800 rounded-lg transition-colors min-h-[44px] flex items-center"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       프로필 설정
                     </Link>
                   </div>
                 ) : (
-                  <div className="px-3 py-2">
-                    <LoginButton className="w-full text-sm" />
+                  <div className="px-4 py-2">
+                    <LoginButton className="w-full text-sm min-h-[44px]" />
                   </div>
                 )}
               </div>

@@ -220,14 +220,7 @@ export default function ArticleDetailPage() {
               <img
                 src={src}
                 alt={alt || ''}
-                className="block my-8 mx-auto rounded-lg shadow-lg border border-gray-200"
-                style={{ 
-                  width: '1200px',
-                  height: 'auto',
-                  maxWidth: 'none',
-                  marginLeft: 'calc(50% - 600px)',
-                  marginRight: 'calc(50% - 600px)'
-                }}
+                className="block my-8 mx-auto rounded-lg shadow-lg border border-gray-200 max-w-full h-auto"
                 {...props}
               />
             ),
