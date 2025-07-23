@@ -119,7 +119,6 @@ export default function ProfessorResourcesPage() {
 
       if (resourcesError) throw resourcesError
       
-      console.log('📚 Resources 데이터:', resourcesData)
       
       // book_id가 있는 항목들의 도서 정보 따로 조회
       const resourcesWithBooks: ProfessorResource[] = []
@@ -128,7 +127,6 @@ export default function ProfessorResourcesPage() {
         let bookInfo = null
         
         if (resource.book_id) {
-          console.log(`🔍 도서 조회 중: ${resource.book_id}`)
           const { data: bookData, error: bookError } = await supabase
             .from('books')
             .select('title')
@@ -137,9 +135,7 @@ export default function ProfessorResourcesPage() {
           
           if (!bookError && bookData) {
             bookInfo = bookData
-            console.log(`✅ 도서 찾음:`, bookData)
           } else {
-            console.log(`❌ 도서 조회 실패:`, bookError)
           }
         }
         
@@ -149,7 +145,6 @@ export default function ProfessorResourcesPage() {
         })
       }
       
-      console.log('🔄 변환된 데이터:', resourcesWithBooks)
       
       setResources(resourcesWithBooks)
       setFilteredResources(resourcesWithBooks)
@@ -215,9 +210,6 @@ export default function ProfessorResourcesPage() {
     e.preventDefault()
     
     try {
-      // 디버깅: 폼 데이터 확인
-      console.log('📝 폼 데이터:', formData)
-      console.log('📚 선택된 도서 ID:', formData.book_id)
       
       // 자료 유형에 따른 자동 제목 생성
       const titleMap = {
@@ -230,13 +222,6 @@ export default function ProfessorResourcesPage() {
       const title = titleMap[formData.resource_type]
       
       if (editingResource) {
-        console.log('✏️ 수정 모드 - 업데이트할 데이터:', {
-          book_id: formData.book_id || null,
-          resource_type: formData.resource_type,
-          title: title,
-          file_url: formData.file_url,
-          is_active: formData.is_active
-        })
         
         const { error } = await supabase
           .from('professor_resources')
@@ -252,14 +237,6 @@ export default function ProfessorResourcesPage() {
         if (error) throw error
         alert('자료가 성공적으로 수정되었습니다.')
       } else {
-        console.log('➕ 추가 모드 - 삽입할 데이터:', {
-          book_id: formData.book_id || null,
-          resource_type: formData.resource_type,
-          title: title,
-          file_url: formData.file_url,
-          is_active: formData.is_active,
-          download_count: 0
-        })
         
         const { data, error } = await supabase
           .from('professor_resources')
@@ -274,7 +251,6 @@ export default function ProfessorResourcesPage() {
           .select()
 
         if (error) throw error
-        console.log('✅ 저장된 데이터:', data)
         alert('자료가 성공적으로 등록되었습니다.')
       }
 

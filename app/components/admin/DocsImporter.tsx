@@ -89,7 +89,6 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
     
     for (const proxyUrl of proxyUrls) {
       try {
-        console.log('🌐 Trying proxy:', proxyUrl)
         const response = await fetch(proxyUrl)
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`)
@@ -102,10 +101,8 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
           text = await response.text()
         }
         
-        console.log('✅ Successfully fetched document')
         break
       } catch (error) {
-        console.log('❌ Proxy failed:', proxyUrl, error)
         lastError = error
         continue
       }
@@ -330,12 +327,10 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
       const matches = Array.from(text.matchAll(pattern))
       if (matches.length > 0) {
         const match = matches[0]
-        console.log('📏 Size Pattern matched:', pattern, match)
         if (match.length > 2 && match[1] && match[2]) {
           // 두 개의 숫자가 캡처된 경우 (가로 x 세로)
           const width = match[1].trim()
           const height = match[2].trim()
-          console.log('📏 Extracted size - Width:', width, 'Height:', height)
           bookInfo.book_width = width
           bookInfo.book_height = height
           bookInfo.book_size = `${width}mm x ${height}mm`
@@ -344,11 +339,7 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
       }
     }
     
-    // 최종 추출 결과 로깅
-    console.log('📊 Final extraction results:')
-    console.log('- book_width:', bookInfo.book_width)
-    console.log('- book_height:', bookInfo.book_height)
-    console.log('- book_size:', bookInfo.book_size)
+    // 치수 추출 완료
 
     // 출간일 추출
     const datePatterns = [

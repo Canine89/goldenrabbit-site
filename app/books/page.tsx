@@ -45,7 +45,6 @@ export default function BooksPage() {
     try {
       setLoading(true)
       
-      console.log('선택된 카테고리:', selectedCategory)
       
       let query = supabase
         .from('books')
@@ -55,13 +54,11 @@ export default function BooksPage() {
 
       if (selectedCategory !== 'all') {
         query = query.eq('category', selectedCategory)
-        console.log('카테고리 필터 적용:', selectedCategory)
       }
 
       const { data, error } = await query
 
       if (error) throw error
-      console.log('조회된 도서 수:', data?.length)
       setBooks(data || [])
     } catch (error) {
       console.error('도서 조회 실패:', error)

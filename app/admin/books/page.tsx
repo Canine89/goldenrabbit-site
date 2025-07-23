@@ -244,8 +244,6 @@ export default function BookManagementPage() {
 
   // 보도자료에서 추출된 도서 정보 처리
   const handleBookInfoExtracted = (extractedInfo: any) => {
-    console.log('🔄 Received extracted info:', extractedInfo)
-    
     // DocsImporter에서 직접 추출된 가로/세로 값 사용, 없으면 기존 parseSizeString 사용
     let width = ''
     let height = ''
@@ -253,14 +251,10 @@ export default function BookManagementPage() {
     if (extractedInfo.book_width && extractedInfo.book_height) {
       width = extractedInfo.book_width.trim()
       height = extractedInfo.book_height.trim()
-      console.log('✅ Using direct extraction - Width:', width, 'Height:', height)
     } else if (extractedInfo.book_size) {
       const parsed = parseSizeString(extractedInfo.book_size.trim())
       width = parsed.width
       height = parsed.height
-      console.log('🔧 Using parseSizeString - Width:', width, 'Height:', height)
-    } else {
-      console.log('❌ No size information found')
     }
     
     setFormData(prevData => ({
@@ -281,7 +275,7 @@ export default function BookManagementPage() {
       author_bio: (extractedInfo.author_bio && extractedInfo.author_bio.trim()) ? extractedInfo.author_bio.trim() : prevData.author_bio
     }))
     
-    console.log('📝 Form data updated with width:', width || prevData.width, 'height:', height || prevData.height)
+    // 폼 데이터 업데이트 완료
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

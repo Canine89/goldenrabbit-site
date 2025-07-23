@@ -58,14 +58,7 @@ export default function ArticlesPage() {
 
       if (error) throw error
       
-      // 디버깅: 아티클 카테고리 확인
-      if (data && data.length > 0) {
-        console.log('📊 Articles categories:', data.map(article => ({ 
-          title: article.title, 
-          category: article.category 
-        })))
-        console.log('🔍 Selected category:', selectedCategory)
-      }
+      // 아티클 데이터 로드 완료
       
       setArticles(data || [])
     } catch (error) {
@@ -171,10 +164,7 @@ export default function ArticlesPage() {
             {categories.map((category) => (
               <button
                 key={category.id}
-                onClick={() => {
-                  console.log('🔘 Category clicked:', category.id, category.name)
-                  setSelectedCategory(category.id)
-                }}
+                onClick={() => setSelectedCategory(category.id)}
                 className={`px-6 py-2 rounded-full font-medium transition-colors ${
                   selectedCategory === category.id
                     ? 'bg-blue-500 text-white shadow-lg'

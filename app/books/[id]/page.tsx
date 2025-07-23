@@ -82,7 +82,6 @@ export default function BookDetailPage() {
           setOnlineStores(storeData)
         }
       } catch (storeError) {
-        console.log('온라인 서점 링크 조회 실패:', storeError)
       }
       */
     } catch (error) {
