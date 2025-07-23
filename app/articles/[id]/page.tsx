@@ -308,11 +308,11 @@ export default function ArticleDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* 상단 네비게이션 */}
-        <div className="mb-6">
-          <Link href="/articles" className="inline-flex items-center text-blue-600 hover:text-blue-700">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="mb-4 sm:mb-6">
+          <Link href="/articles" className="inline-flex items-center text-blue-600 hover:text-blue-700 min-h-[44px] text-sm sm:text-base">
+            <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
             아티클 목록으로 돌아가기
@@ -334,43 +334,43 @@ export default function ArticleDetailPage() {
             </div>
           )}
 
-          <div className="p-8">
+          <div className="p-4 sm:p-8">
             {/* 메타 정보 */}
-            <div className="flex items-center gap-3 mb-6">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+            <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6 flex-wrap">
+              <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
                 {article.category === 'tech' ? '기술' :
                  article.category === 'news' ? '뉴스' :
                  article.category === 'event' ? '이벤트' :
                  article.category === 'notice' ? '공지사항' : 'Tech'}
               </span>
-              <span className="text-gray-500">{formatDate(article.created_at)}</span>
+              <span className="text-xs sm:text-base text-gray-500">{formatDate(article.created_at)}</span>
               {article.is_featured && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-green-100 text-green-800">
                   추천 아티클
                 </span>
               )}
             </div>
 
             {/* 제목 */}
-            <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-6 leading-tight">
+            <h1 className="text-xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4 sm:mb-6 leading-tight">
               {article.title}
             </h1>
 
             {/* 요약 */}
             {article.excerpt && (
-              <div className="bg-gray-50 rounded-lg p-6 mb-8">
-                <div className="text-lg text-gray-700 leading-relaxed">
+              <div className="bg-gray-50 rounded-lg p-4 sm:p-6 mb-6 sm:mb-8">
+                <div className="text-sm sm:text-lg text-gray-700 leading-relaxed">
                   {renderContent(article.excerpt)}
                 </div>
               </div>
             )}
 
             {/* 본문 */}
-            <div className="prose prose-lg max-w-none">
+            <div className="prose prose-sm sm:prose-lg max-w-none">
               {article.content ? (
                 renderContent(article.content)
               ) : (
-                <p className="text-gray-500 text-center py-8">
+                <p className="text-gray-500 text-center py-6 sm:py-8 text-sm sm:text-base">
                   아티클 내용이 준비 중입니다.
                 </p>
               )}
@@ -378,13 +378,13 @@ export default function ArticleDetailPage() {
 
             {/* 태그 */}
             {article.tags && article.tags.length > 0 && (
-              <div className="mt-8 pt-8 border-t border-gray-200">
+              <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-200">
                 <h3 className="text-sm font-medium text-gray-900 mb-3">태그</h3>
                 <div className="flex flex-wrap gap-2">
                   {article.tags.map((tag, index) => (
                     <span
                       key={index}
-                      className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-700"
+                      className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm bg-gray-100 text-gray-700"
                     >
                       #{tag}
                     </span>
@@ -394,7 +394,7 @@ export default function ArticleDetailPage() {
             )}
 
             {/* 공유하기 */}
-            <div className="mt-8 pt-8 border-t border-gray-200">
+            <div className="mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-gray-200">
               <h3 className="text-sm font-medium text-gray-900 mb-3">공유하기</h3>
               <div className="flex gap-3">
                 <button
@@ -410,7 +410,7 @@ export default function ArticleDetailPage() {
                       alert('링크가 클립보드에 복사되었습니다!')
                     }
                   }}
-                  className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                  className="inline-flex items-center px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors min-h-[44px] text-sm sm:text-base"
                 >
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />

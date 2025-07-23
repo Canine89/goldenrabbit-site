@@ -33,10 +33,10 @@ const Card = ({
   
   const paddings = {
     none: '',
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8',
-    xl: 'p-10',
+    sm: 'p-3 sm:p-4',
+    md: 'p-4 sm:p-6',
+    lg: 'p-6 sm:p-8',
+    xl: 'p-8 sm:p-10',
   }
   
   const hoverEffect = hover ? 'hover:shadow-xl hover:-translate-y-1 cursor-pointer group' : ''
@@ -56,31 +56,31 @@ interface CardSubComponentProps {
 }
 
 const CardHeader = ({ children, className = '' }: CardSubComponentProps) => (
-  <div className={`mb-4 ${className}`}>
+  <div className={`mb-3 sm:mb-4 ${className}`}>
     {children}
   </div>
 )
 
 const CardTitle = ({ children, className = '' }: CardSubComponentProps) => (
-  <h3 className={`text-lg font-semibold text-neutral-900 ${className}`}>
+  <h3 className={`text-base sm:text-lg font-semibold text-neutral-900 ${className}`}>
     {children}
   </h3>
 )
 
 const CardDescription = ({ children, className = '' }: CardSubComponentProps) => (
-  <p className={`text-neutral-600 ${className}`}>
+  <p className={`text-sm sm:text-base text-neutral-600 ${className}`}>
     {children}
   </p>
 )
 
 const CardContent = ({ children, className = '' }: CardSubComponentProps) => (
-  <div className={`p-6 ${className}`}>
+  <div className={`p-4 sm:p-6 ${className}`}>
     {children}
   </div>
 )
 
 const CardFooter = ({ children, className = '' }: CardSubComponentProps) => (
-  <div className={`mt-6 ${className}`}>
+  <div className={`mt-4 sm:mt-6 ${className}`}>
     {children}
   </div>
 )

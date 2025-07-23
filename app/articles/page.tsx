@@ -119,21 +119,21 @@ export default function ArticlesPage() {
     <div className="min-h-screen bg-white">
       {/* 헤더 섹션 */}
       <div className="bg-gradient-accent text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <div className="text-center">
-            <h1 className="text-4xl font-bold mb-4 text-white">Tech 아티클</h1>
-            <p className="text-lg max-w-2xl mx-auto text-white opacity-90">
+            <h1 className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 text-white">Tech 아티클</h1>
+            <p className="text-base sm:text-lg max-w-2xl mx-auto text-white opacity-90 px-2">
               최신 IT 트렌드와 기술 인사이트를 담은 아티클들을 만나보세요
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* 검색 및 필터 */}
-        <div className="mb-8 space-y-6">
+        <div className="mb-6 sm:mb-8 space-y-4 sm:space-y-6">
           {/* 검색바 */}
-          <div className="relative max-w-lg mx-auto">
+          <div className="relative max-w-full sm:max-w-lg mx-auto">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -142,14 +142,14 @@ export default function ArticlesPage() {
             <input
               type="text"
               placeholder="아티클 제목이나 내용을 검색하세요..."
-              className="block w-full pl-12 pr-4 py-3 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200"
+              className="block w-full pl-12 pr-12 py-3 sm:py-3 bg-white border border-gray-300 rounded-xl shadow-sm text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:outline-none transition-all duration-200 min-h-[48px] text-base"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors min-w-[44px] min-h-[44px] justify-center"
                 aria-label="검색어 지우기"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,26 +160,28 @@ export default function ArticlesPage() {
           </div>
 
           {/* 카테고리 필터 */}
-          <div className="flex flex-wrap justify-center gap-3">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
-                className={`px-6 py-2 rounded-full font-medium transition-colors ${
-                  selectedCategory === category.id
-                    ? 'bg-blue-500 text-white shadow-lg'
-                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:text-blue-600'
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
+          <div className="overflow-x-auto">
+            <div className="flex gap-2 sm:gap-3 justify-start sm:justify-center min-w-max px-4 sm:px-0">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`flex-shrink-0 px-4 sm:px-6 py-2 sm:py-2 rounded-full font-medium transition-colors min-h-[44px] flex items-center justify-center whitespace-nowrap text-sm sm:text-base ${
+                    selectedCategory === category.id
+                      ? 'bg-blue-500 text-white shadow-lg'
+                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-blue-50 hover:text-blue-600'
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* 아티클 목록 */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {Array.from({ length: 6 }, (_, i) => (
               <Card key={i} padding="none" className="overflow-hidden animate-pulse">
                 <Loading.Skeleton variant="image" />
@@ -196,7 +198,7 @@ export default function ArticlesPage() {
             ))}
           </div>
         ) : filteredArticles.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {filteredArticles.map((article) => {
               const firstImage = extractFirstImage(article.content)
               const imageUrl = firstImage || article.featured_image_url
@@ -226,22 +228,22 @@ export default function ArticlesPage() {
                         </div>
                       )}
                     </div>
-                    <div className="p-6">
-                      <div className="flex items-center gap-2 mb-3">
+                    <div className="p-3 sm:p-6">
+                      <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3 flex-wrap">
                         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                           {categories.find(cat => cat.id === article.category)?.name || 'Tech'}
                         </span>
-                        <span className="text-sm text-gray-500">{formatDate(article.created_at)}</span>
+                        <span className="text-xs sm:text-sm text-gray-500">{formatDate(article.created_at)}</span>
                         {article.is_featured && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                             추천
                           </span>
                         )}
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-sm sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">
                         {article.title}
                       </h3>
-                      <p className="text-gray-600 line-clamp-3">
+                      <p className="text-xs sm:text-base text-gray-600 line-clamp-2 sm:line-clamp-3">
                         {article.excerpt || 
                          (article.content ? article.content.replace(/<[^>]*>/g, '').substring(0, 120) + '...' : '아티클 내용 미리보기가 준비 중입니다.')}
                       </p>
