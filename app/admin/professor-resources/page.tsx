@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Button from '../../components/ui/Button'
 import Loading from '../../components/ui/Loading'
-import AdminNavigation from '../components/AdminNavigation'
 
 type ResourceType = 'lecture_slides' | 'source_code' | 'book_info' | 'copyright'
 
@@ -367,11 +366,8 @@ export default function ProfessorResourcesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 관리자 내비게이션 */}
-      <AdminNavigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div>
+      <div>
 
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-6">

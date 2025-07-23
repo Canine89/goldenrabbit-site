@@ -13,10 +13,10 @@ const navigationItems: NavigationItem[] = [
   { title: '대시보드', href: '/admin', icon: '📊' },
   { title: '도서 관리', href: '/admin/books', icon: '📚' },
   { title: '상품 관리', href: '/admin/products', icon: '🛍️' },
-  { title: '주문 관리', href: '/admin/orders', icon: '📋' },
+  // { title: '주문 관리', href: '/admin/orders', icon: '📋' }, // TODO: 주문 관리 페이지 구현 필요
   { title: '사용자 관리', href: '/admin/users', icon: '👥' },
   { title: '아티클 관리', href: '/admin/articles', icon: '📝' },
-  { title: '이벤트 관리', href: '/admin/events', icon: '🎉' },
+  // { title: '이벤트 관리', href: '/admin/events', icon: '🎉' }, // TODO: 이벤트 관리 페이지 구현 필요
   { title: '교수자료실', href: '/admin/professor-resources', icon: '🎓' },
 ]
 

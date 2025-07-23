@@ -57,6 +57,16 @@ export default function ArticlesPage() {
       const { data, error } = await query
 
       if (error) throw error
+      
+      // 디버깅: 아티클 카테고리 확인
+      if (data && data.length > 0) {
+        console.log('📊 Articles categories:', data.map(article => ({ 
+          title: article.title, 
+          category: article.category 
+        })))
+        console.log('🔍 Selected category:', selectedCategory)
+      }
+      
       setArticles(data || [])
     } catch (error) {
       console.error('아티클 조회 실패:', error)
@@ -82,6 +92,13 @@ export default function ArticlesPage() {
   const extractFirstImage = (content?: string) => {
     if (!content) return null
     
+    // 마크다운 이미지 패턴: ![alt](src) - 우선 체크
+    const markdownImageMatch = content.match(/!\[[^\]]*\]\(([^)]+)\)/)
+    if (markdownImageMatch) {
+      return markdownImageMatch[1]
+    }
+    
+    // HTML img 태그 패턴: <img src="...">
     const imgRegex = /<img[^>]+src="([^"]+)"[^>]*>/i
     const match = content.match(imgRegex)
     
@@ -154,7 +171,10 @@ export default function ArticlesPage() {
             {categories.map((category) => (
               <button
                 key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => {
+                  console.log('🔘 Category clicked:', category.id, category.name)
+                  setSelectedCategory(category.id)
+                }}
                 className={`px-6 py-2 rounded-full font-medium transition-colors ${
                   selectedCategory === category.id
                     ? 'bg-blue-500 text-white shadow-lg'

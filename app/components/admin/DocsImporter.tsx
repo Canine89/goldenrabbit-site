@@ -8,9 +8,13 @@ interface BookInfo {
   category: string
   price: string
   description: string
+  publisher_review: string
+  testimonials: string
   isbn: string
   page_count: string
   book_size: string
+  book_width: string
+  book_height: string
   publication_date: string
   table_of_contents: string
   author_bio: string
@@ -69,18 +73,47 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
 
     const documentId = match[1]
     
-    // CORS 우회를 위한 프록시 서버 사용
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(
-      `https://docs.google.com/document/d/${documentId}/export?format=txt`
-    )}`
+    // 여러 프록시 서버 시도
+    const proxyUrls = [
+      `https://api.allorigins.win/get?url=${encodeURIComponent(
+        `https://docs.google.com/document/d/${documentId}/export?format=txt`
+      )}`,
+      `https://corsproxy.io/?${encodeURIComponent(
+        `https://docs.google.com/document/d/${documentId}/export?format=txt`
+      )}`,
+      `https://cors-anywhere.herokuapp.com/https://docs.google.com/document/d/${documentId}/export?format=txt`
+    ]
     
-    const response = await fetch(proxyUrl)
-    if (!response.ok) {
-      throw new Error('문서에 접근할 수 없습니다. 문서가 공개되어 있는지 확인해주세요.')
-    }
+    let text = ''
+    let lastError = null
+    
+    for (const proxyUrl of proxyUrls) {
+      try {
+        console.log('🌐 Trying proxy:', proxyUrl)
+        const response = await fetch(proxyUrl)
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
 
-    const data = await response.json()
-    const text = data.contents
+        if (proxyUrl.includes('allorigins.win')) {
+          const data = await response.json()
+          text = data.contents
+        } else {
+          text = await response.text()
+        }
+        
+        console.log('✅ Successfully fetched document')
+        break
+      } catch (error) {
+        console.log('❌ Proxy failed:', proxyUrl, error)
+        lastError = error
+        continue
+      }
+    }
+    
+    if (!text) {
+      throw new Error(`모든 프록시 서버에서 문서 가져오기 실패: ${lastError?.message || '알 수 없는 오류'}. 문서가 공개되어 있는지 확인해주세요.`)
+    }
     
     // 텍스트 파싱
     const bookInfo = parseBookInfoFromText(text)
@@ -96,24 +129,40 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
       category: '',
       price: '',
       description: '',
+      publisher_review: '',
+      testimonials: '',
       isbn: '',
       page_count: '',
       book_size: '',
+      book_width: '',
+      book_height: '',
       publication_date: '',
       table_of_contents: '',
       author_bio: ''
     }
 
-    // 도서명 추출
+    // 도서명 추출 (우선순위 순서로 배치)
     const titlePatterns = [
+      // 불릿 포인트 + 도서명 라벨 (최우선)
+      /[・•·‧․]\s*도서명\s*:\s*([^\n\r]+)/gi,
+      /[・•·‧․]\s*책제목\s*:\s*([^\n\r]+)/gi,
+      /[・•·‧․]\s*제목\s*:\s*([^\n\r]+)/gi,
+      
+      // 도서명 라벨 (고우선순위)
+      /도서명\s*:\s*([^\n\r]+)/gi,
+      /책제목\s*:\s*([^\n\r]+)/gi,
+      /제목\s*:\s*([^\n\r]+)/gi,
+      
+      // 특정 도서명 패턴
       /(이게\s*되네\?\s*제미나이[^.\n]*)/gi,
+      
+      // 따옴표/괄호로 감싸진 제목들
       /"([^"]+)"/g,
       /『([^』]+)』/g,
       /「([^」]+)」/g,
       /"([^"]+)"/g,
-      /제목[:\s]*([^\n\r]+)/gi,
-      /도서명[:\s]*([^\n\r]+)/gi,
-      /책제목[:\s]*([^\n\r]+)/gi,
+      
+      // 기타 패턴
       /(이게\s*되네\?[^.\n]*)/gi
     ]
 
@@ -122,12 +171,23 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
       for (const match of matches) {
         if (match[1] && match[1].trim().length > 5) {
           let title = match[1].trim()
+          
+          // 도서명 후미에 있는 불필요한 단어들 제거
           title = title.replace(/\s*출간\s*$/, '')
           title = title.replace(/\s*발간\s*$/, '')
           title = title.replace(/\s*출판\s*$/, '')
+          title = title.replace(/\s*신간\s*$/, '')
+          title = title.replace(/\s*도서\s*$/, '')
+          
+          // 따옴표 제거
           title = title.replace(/^[""]/, '').replace(/[""]$/, '')
-          bookInfo.title = title
-          break
+          title = title.replace(/^['']/, '').replace(/['']$/, '')
+          
+          // 도서명이 충분히 길고 유의미한 경우에만 저장
+          if (title.length >= 5 && title.length <= 100) {
+            bookInfo.title = title
+            break
+          }
         }
       }
       if (bookInfo.title) break
@@ -157,6 +217,8 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
     const pricePatterns = [
       /[・•·‧․]\s*정가\s*:\s*([\d,]+)\s*원/gi,
       /[・•·‧․]\s*정가\s*:\s*([\d,]+)/gi,
+      /[・•·‧․]\s*가격\s*:\s*([\d,]+)\s*원/gi,
+      /[・•·‧․]\s*가격\s*:\s*([\d,]+)/gi,
       /정가\s*:\s*([\d,]+)\s*원/gi,
       /정가\s*:\s*([\d,]+)/gi,
       /가격\s*:\s*([\d,]+)\s*원/gi,
@@ -177,26 +239,60 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
       }
     }
 
-    // ISBN 추출
+    // ISBN 추출 (다양한 패턴 지원 - 불규칙한 공백 포함)
     const isbnPatterns = [
-      /ISBN[:\s]*([0-9\-]{10,17})/gi,
+      // 불릿 포인트 + ISBN 라벨 + 콜론/공백 + 숫자 (더 넓은 범위)
+      /[・•·‧․]\s*ISBN\s*:\s*([0-9\-\s]{13,25})/gi,
+      /[・•·‧․]\s*ISBN[:\s]+([0-9\-\s]{13,25})/gi,
+      
+      // ISBN 라벨 + 콜론/공백 + 숫자 (더 넓은 범위)
+      /ISBN\s*:\s*([0-9\-\s]{13,25})/gi,
+      /ISBN[:\s]+([0-9\-\s]{13,25})/gi,
+      
+      // 직접적인 ISBN 형식 (불규칙한 공백과 하이픈 처리)
+      /(979[\s\-]*\d{2}[\s\-]*\d{5}[\s\-]*\d{2}[\s\-]*\d)/g,
+      /(978[\s\-]*\d{2}[\s\-]*\d{5}[\s\-]*\d{2}[\s\-]*\d)/g,
+      
+      // 일반적인 13자리 ISBN 형식 (불규칙한 공백과 하이픈)
+      /(\d{3}[\s\-]*\d{2}[\s\-]*\d{5}[\s\-]*\d{2}[\s\-]*\d)/g,
+      
+      // 기존 패턴들 (호환성 유지)
       /(979-\d{2}-\d{5}-\d{2}-\d)/g,
-      /(978-\d{2}-\d{5}-\d{2}-\d)/g,
-      /(\d{3}-\d{2}-\d{5}-\d{2}-\d)/g
+      /(978-\d{2}-\d{5}-\d{2}-\d)/g
     ]
 
     for (const pattern of isbnPatterns) {
       const match = text.match(pattern)
       if (match) {
         let isbn = match[1] || match[0]
-        isbn = isbn.replace(/^ISBN[:\s]*/gi, '').trim()
-        bookInfo.isbn = isbn
-        break
+        
+        // 불필요한 문자들 제거
+        isbn = isbn.replace(/^[・•·‧․]\s*/gi, '') // 불릿 포인트 제거
+                   .replace(/^ISBN\s*:\s*/gi, '')   // ISBN 라벨 제거
+                   .replace(/\s+/g, '')            // 모든 공백 제거 (하이픈 사이 공백 포함)
+                   .replace(/\-+/g, '-')           // 연속 하이픈을 하나로 통합
+                   .trim()
+        
+        // 숫자만 추출해서 13자리인지 확인
+        const numbersOnly = isbn.replace(/[^\d]/g, '')
+        
+        // 13자리 숫자로 구성된 올바른 ISBN인지 검증
+        if (numbersOnly.length === 13 && /^(978|979)/.test(numbersOnly)) {
+          // 표준 ISBN 형식으로 변환 (979-11-94383-22-2)
+          const formattedIsbn = `${numbersOnly.substring(0,3)}-${numbersOnly.substring(3,5)}-${numbersOnly.substring(5,10)}-${numbersOnly.substring(10,12)}-${numbersOnly.substring(12,13)}`
+          bookInfo.isbn = formattedIsbn
+          break
+        }
       }
     }
 
     // 페이지 수 추출
     const pagePatterns = [
+      /[・•·‧․]\s*분량\s*:\s*(\d+)\s*쪽/gi,
+      /[・•·‧․]\s*분량[:\s]*(\d+)p/gi,
+      /[・•·‧․]\s*쪽수[:\s]*(\d+)/gi,
+      /[・•·‧․]\s*페이지[:\s]*(\d+)/gi,
+      /분량\s*:\s*(\d+)\s*쪽/gi,
       /분량[:\s]*(\d+)p/gi,
       /(\d+)p(?!\w)/gi,
       /(\d+)\s*(?:페이지|쪽|page)/gi,
@@ -220,25 +316,46 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
 
     // 책 크기 추출
     const sizePatterns = [
-      /판형[:\s]*(\d+)\s*(?:mm)?\s*(?:×|x|X)\s*(\d+)\s*(?:mm)?/gi,
-      /(\d+)\s*(?:mm)?\s*(?:×|x|X)\s*(\d+)\s*(?:mm)/gi,
-      /크기[:\s]*(\d+\s*(?:×|x|X|\*)\s*\d+\s*(?:mm|㎜)?)/gi
+      /판형\s*:\s*(\d+)\s*\*\s*(\d+)/gi,
+      /판형\s*:\s*(\d+)\s*×\s*(\d+)/gi,
+      /판형\s*:\s*(\d+)\s*x\s*(\d+)/gi,
+      /판형\s*:\s*(\d+)\s*X\s*(\d+)/gi,
+      /판형\s*:\s*(\d+)\s*(?:mm)?\s*(?:×|x|X|\*)\s*(\d+)\s*(?:mm)?/gi,
+      /크기\s*:\s*(\d+)\s*(?:mm)?\s*(?:×|x|X|\*)\s*(\d+)\s*(?:mm)?/gi,
+      /사이즈\s*:\s*(\d+)\s*(?:mm)?\s*(?:×|x|X|\*)\s*(\d+)\s*(?:mm)?/gi,
+      /(\d+)\s*(?:mm)?\s*(?:×|x|X|\*)\s*(\d+)\s*(?:mm)/gi
     ]
 
     for (const pattern of sizePatterns) {
-      const match = text.match(pattern)
-      if (match) {
+      const matches = Array.from(text.matchAll(pattern))
+      if (matches.length > 0) {
+        const match = matches[0]
+        console.log('📏 Size Pattern matched:', pattern, match)
         if (match.length > 2 && match[1] && match[2]) {
-          bookInfo.book_size = `${match[1]}mm x ${match[2]}mm`
-        } else {
-          bookInfo.book_size = match[1] || match[0]
+          // 두 개의 숫자가 캡처된 경우 (가로 x 세로)
+          const width = match[1].trim()
+          const height = match[2].trim()
+          console.log('📏 Extracted size - Width:', width, 'Height:', height)
+          bookInfo.book_width = width
+          bookInfo.book_height = height
+          bookInfo.book_size = `${width}mm x ${height}mm`
         }
         break
       }
     }
+    
+    // 최종 추출 결과 로깅
+    console.log('📊 Final extraction results:')
+    console.log('- book_width:', bookInfo.book_width)
+    console.log('- book_height:', bookInfo.book_height)
+    console.log('- book_size:', bookInfo.book_size)
 
     // 출간일 추출
     const datePatterns = [
+      /[・•·‧․]\s*발행일?[:\s]*(\d{4})\s*년\s*0?(\d{1,2})\s*월\s*0?(\d{1,2})\s*일/gi,
+      /[・•·‧․]\s*출간[:\s]*(\d{4}[년\-\.]\d{1,2}[월\-\.]\d{1,2}일?)/gi,
+      /[・•·‧․]\s*출판[:\s]*(\d{4}[년\-\.]\d{1,2}[월\-\.]\d{1,2}일?)/gi,
+      /[・•·‧․]\s*배본일?[:\s]*(\d{4})\s*년\s*0?(\d{1,2})\s*월\s*0?(\d{1,2})\s*일/gi,
       /발행일?[:\s]*(\d{4})\s*년\s*0?(\d{1,2})\s*월\s*0?(\d{1,2})\s*일/gi,
       /(\d{4})\s*년\s*0?(\d{1,2})\s*월\s*0?(\d{1,2})\s*일/g,
       /(\d{4})-0?(\d{1,2})-0?(\d{1,2})/g,
@@ -269,47 +386,128 @@ export default function DocsImporter({ onBookInfoExtracted }: DocsImporterProps)
       if (bookInfo.publication_date) break
     }
 
-    // 도서 설명 추출
-    const descriptionMatch = text.match(/4\.\s*출판사\s*리뷰\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi)
-    if (descriptionMatch && descriptionMatch[0]) {
-      let description = descriptionMatch[0]
-        .replace(/4\.\s*출판사\s*리뷰\s*\n/gi, '')
-        .trim()
-      
-      if (description.length > 20) {
-        bookInfo.description = description
+    // 출판사 리뷰 추출 (숫자에 의존하지 않는 패턴)
+    const publisherReviewPatterns = [
+      /\d*\.\s*출판사\s*리뷰\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /출판사\s*리뷰[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /출판사\s*서평[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /출판사\s*평[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi
+    ]
+    
+    for (const pattern of publisherReviewPatterns) {
+      const publisherReviewMatch = text.match(pattern)
+      if (publisherReviewMatch && publisherReviewMatch[0]) {
+        let publisherReview = publisherReviewMatch[0]
+          .replace(/\d*\.\s*출판사\s*(?:리뷰|서평|평)[:\s]*\n/gi, '')
+          .replace(/출판사\s*(?:리뷰|서평|평)[:\s]*\n/gi, '')
+          .trim()
+        
+        if (publisherReview.length > 20) {
+          bookInfo.publisher_review = publisherReview
+          break
+        }
       }
     }
 
-    // 저자 소개 추출
-    const authorBioMatch = text.match(/3\.\s*저자\s*소개\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi)
-    if (authorBioMatch && authorBioMatch[0]) {
-      let authorBio = authorBioMatch[0]
-        .replace(/3\.\s*저자\s*소개\s*\n/gi, '')
-        .trim()
-      
-      if (authorBio.length > 10) {
-        bookInfo.author_bio = authorBio
+    // 도서 설명 추출 (숫자에 의존하지 않는 패턴)
+    const descriptionPatterns = [
+      /\d*\.\s*도서\s*소개\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /\d*\.\s*책\s*소개\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /\d*\.\s*개요\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /도서\s*소개[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /책\s*소개[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /개요[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /책\s*내용[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi
+    ]
+    
+    for (const pattern of descriptionPatterns) {
+      const descriptionMatch = text.match(pattern)
+      if (descriptionMatch && descriptionMatch[0]) {
+        let description = descriptionMatch[0]
+          .replace(/\d*\.\s*(?:도서|책)\s*(?:소개|내용)[:\s]*\n/gi, '')
+          .replace(/\d*\.\s*개요[:\s]*\n/gi, '')
+          .replace(/(?:도서|책)\s*(?:소개|내용)[:\s]*\n/gi, '')
+          .replace(/개요[:\s]*\n/gi, '')
+          .trim()
+        
+        if (description.length > 20) {
+          bookInfo.description = description
+          break
+        }
       }
     }
 
-    // 목차 추출
+    // 저자 소개 추출 (숫자에 의존하지 않는 패턴)
+    const authorBioPatterns = [
+      /\d*\.\s*저자\s*소개\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /\d*\.\s*지은이\s*소개\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /저자\s*소개[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /지은이\s*소개[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /작가\s*소개[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi
+    ]
+    
+    for (const pattern of authorBioPatterns) {
+      const authorBioMatch = text.match(pattern)
+      if (authorBioMatch && authorBioMatch[0]) {
+        let authorBio = authorBioMatch[0]
+          .replace(/\d*\.\s*(?:저자|지은이|작가)\s*소개[:\s]*\n/gi, '')
+          .replace(/(?:저자|지은이|작가)\s*소개[:\s]*\n/gi, '')
+          .trim()
+        
+        if (authorBio.length > 10) {
+          bookInfo.author_bio = authorBio
+          break
+        }
+      }
+    }
+
+    // 목차 추출 (숫자에 의존하지 않는 패턴)
     const tocPatterns = [
-      /\d+\.\s*목차\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
-      /목차\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
-      /목차[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi
+      /\d*\.\s*목차\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /목차[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /차례[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /Contents[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi
     ]
     
     for (const pattern of tocPatterns) {
       const tocMatch = text.match(pattern)
       if (tocMatch && tocMatch[0]) {
         let toc = tocMatch[0]
-          .replace(/\d*\.\s*목차[:\s]*\n/gi, '')
-          .replace(/목차[:\s]*\n/gi, '')
+          .replace(/\d*\.\s*(?:목차|차례)[:\s]*\n/gi, '')
+          .replace(/(?:목차|차례|Contents)[:\s]*\n/gi, '')
           .trim()
         
         if (toc.length > 20) {
           bookInfo.table_of_contents = toc
+          break
+        }
+      }
+    }
+
+    // 추천사 추출 (숫자에 의존하지 않는 패턴)
+    const testimonialsPatterns = [
+      /\d*\.\s*추천사\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /\d*\.\s*추천의\s*말\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /\d*\.\s*추천평\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /\d*\.\s*서평\s*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /추천사[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /추천의\s*말[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /추천평[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /서평[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /추천글[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi,
+      /추천문[:\s]*\n([\s\S]*?)(?=\n\d+\.|$)/gi
+    ]
+    
+    for (const pattern of testimonialsPatterns) {
+      const testimonialsMatch = text.match(pattern)
+      if (testimonialsMatch && testimonialsMatch[0]) {
+        let testimonials = testimonialsMatch[0]
+          .replace(/\d*\.\s*(?:추천사|추천의\s*말|추천평|서평|추천글|추천문)[:\s]*\n/gi, '')
+          .replace(/(?:추천사|추천의\s*말|추천평|서평|추천글|추천문)[:\s]*\n/gi, '')
+          .trim()
+        
+        if (testimonials.length > 20) {
+          bookInfo.testimonials = testimonials
           break
         }
       }

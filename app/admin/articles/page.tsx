@@ -175,6 +175,12 @@ export default function ArticleManagementPage() {
     e.preventDefault()
     
     try {
+      // 현재 로그인한 사용자 정보 가져오기
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        throw new Error('사용자 정보를 가져올 수 없습니다.')
+      }
+
       const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
       
       const articleData = {
@@ -186,6 +192,7 @@ export default function ArticleManagementPage() {
         tags: tagsArray,
         is_featured: formData.is_featured,
         is_published: formData.is_published,
+        author: user.id, // 현재 로그인한 사용자 ID를 author로 설정
       }
 
       if (editingArticle) {
@@ -301,17 +308,8 @@ export default function ArticleManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* 상단 네비게이션 */}
-        <div className="mb-6">
-          <Link href="/admin" className="inline-flex items-center text-primary-600 hover:text-primary-700">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            관리자 대시보드로 돌아가기
-          </Link>
-        </div>
+    <div>
+      <div>
 
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-6">
@@ -359,7 +357,7 @@ export default function ArticleManagementPage() {
         {/* 아티클 등록/수정 폼 */}
         {showAddForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[95vh] overflow-y-auto">
+            <div className="bg-white rounded-lg p-6 w-full max-w-6xl max-h-[95vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-900">
                   {editingArticle ? '아티클 수정' : '새 아티클 등록'}

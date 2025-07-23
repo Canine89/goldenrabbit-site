@@ -8,7 +8,6 @@ import SmartImage from '../../components/SmartImage'
 import Loading from '../../components/ui/Loading'
 import Button from '../../components/ui/Button'
 import DocsImporter from '../../components/admin/DocsImporter'
-import AdminNavigation from '../components/AdminNavigation'
 
 interface Book {
   id: string
@@ -24,6 +23,8 @@ interface Book {
   publication_date?: string
   table_of_contents?: string
   description?: string
+  publisher_review?: string
+  testimonials?: string
   is_featured: boolean
   is_active: boolean
   created_at: string
@@ -35,6 +36,8 @@ interface FormData {
   category: string
   price: string
   description: string
+  publisher_review: string
+  testimonials: string
   cover_image_url: string
   isbn: string
   page_count: string
@@ -44,6 +47,9 @@ interface FormData {
   table_of_contents: string
   author_bio: string
   is_featured: boolean
+  yes24_link: string
+  kyobo_link: string
+  aladin_link: string
 }
 
 export default function BookManagementPage() {
@@ -63,6 +69,8 @@ export default function BookManagementPage() {
     category: '',
     price: '',
     description: '',
+    publisher_review: '',
+    testimonials: '',
     cover_image_url: '',
     isbn: '',
     page_count: '',
@@ -72,6 +80,9 @@ export default function BookManagementPage() {
     table_of_contents: '',
     author_bio: '',
     is_featured: false,
+    yes24_link: '',
+    kyobo_link: '',
+    aladin_link: '',
   })
 
   const supabase = createSupabaseClient()
@@ -166,6 +177,8 @@ export default function BookManagementPage() {
       category: '',
       price: '',
       description: '',
+      publisher_review: '',
+      testimonials: '',
       cover_image_url: '',
       isbn: '',
       page_count: '',
@@ -175,6 +188,9 @@ export default function BookManagementPage() {
       table_of_contents: '',
       author_bio: '',
       is_featured: false,
+      yes24_link: '',
+      kyobo_link: '',
+      aladin_link: '',
     })
     setEditingBook(null)
     setShowAddForm(false)
@@ -207,6 +223,8 @@ export default function BookManagementPage() {
       category: book.category,
       price: book.price.toString(),
       description: book.description || '',
+      publisher_review: book.publisher_review || '',
+      testimonials: book.testimonials || '',
       cover_image_url: book.cover_image_url || '',
       isbn: book.isbn || '',
       page_count: book.page_count?.toString() || '',
@@ -216,6 +234,9 @@ export default function BookManagementPage() {
       table_of_contents: book.table_of_contents || '',
       author_bio: book.author_bio || '',
       is_featured: book.is_featured,
+      yes24_link: (book as any).yes24_link || '',
+      kyobo_link: (book as any).kyobo_link || '',
+      aladin_link: (book as any).aladin_link || '',
     })
     setEditingBook(book)
     setShowAddForm(true)
@@ -223,8 +244,24 @@ export default function BookManagementPage() {
 
   // 보도자료에서 추출된 도서 정보 처리
   const handleBookInfoExtracted = (extractedInfo: any) => {
-    // 추출된 크기 정보를 가로/세로로 분리
-    const { width, height } = extractedInfo.book_size ? parseSizeString(extractedInfo.book_size.trim()) : { width: '', height: '' }
+    console.log('🔄 Received extracted info:', extractedInfo)
+    
+    // DocsImporter에서 직접 추출된 가로/세로 값 사용, 없으면 기존 parseSizeString 사용
+    let width = ''
+    let height = ''
+    
+    if (extractedInfo.book_width && extractedInfo.book_height) {
+      width = extractedInfo.book_width.trim()
+      height = extractedInfo.book_height.trim()
+      console.log('✅ Using direct extraction - Width:', width, 'Height:', height)
+    } else if (extractedInfo.book_size) {
+      const parsed = parseSizeString(extractedInfo.book_size.trim())
+      width = parsed.width
+      height = parsed.height
+      console.log('🔧 Using parseSizeString - Width:', width, 'Height:', height)
+    } else {
+      console.log('❌ No size information found')
+    }
     
     setFormData(prevData => ({
       ...prevData,
@@ -233,6 +270,8 @@ export default function BookManagementPage() {
       category: (extractedInfo.category && extractedInfo.category.trim()) ? extractedInfo.category.trim() : prevData.category,
       price: (extractedInfo.price && extractedInfo.price.trim()) ? extractedInfo.price.trim() : prevData.price,
       description: (extractedInfo.description && extractedInfo.description.trim()) ? extractedInfo.description.trim() : prevData.description,
+      publisher_review: (extractedInfo.publisher_review && extractedInfo.publisher_review.trim()) ? extractedInfo.publisher_review.trim() : prevData.publisher_review,
+      testimonials: (extractedInfo.testimonials && extractedInfo.testimonials.trim()) ? extractedInfo.testimonials.trim() : prevData.testimonials,
       isbn: (extractedInfo.isbn && extractedInfo.isbn.trim()) ? extractedInfo.isbn.trim() : prevData.isbn,
       page_count: (extractedInfo.page_count && extractedInfo.page_count.trim()) ? extractedInfo.page_count.trim() : prevData.page_count,
       width: width || prevData.width,
@@ -241,6 +280,8 @@ export default function BookManagementPage() {
       table_of_contents: (extractedInfo.table_of_contents && extractedInfo.table_of_contents.trim()) ? extractedInfo.table_of_contents.trim() : prevData.table_of_contents,
       author_bio: (extractedInfo.author_bio && extractedInfo.author_bio.trim()) ? extractedInfo.author_bio.trim() : prevData.author_bio
     }))
+    
+    console.log('📝 Form data updated with width:', width || prevData.width, 'height:', height || prevData.height)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -258,6 +299,8 @@ export default function BookManagementPage() {
         category: formData.category,
         price: parseInt(formData.price),
         description: formData.description,
+        publisher_review: formData.publisher_review,
+        testimonials: formData.testimonials,
         cover_image_url: formData.cover_image_url,
         isbn: formData.isbn,
         page_count: formData.page_count ? parseInt(formData.page_count) : null,
@@ -266,7 +309,10 @@ export default function BookManagementPage() {
         table_of_contents: formData.table_of_contents,
         author_bio: formData.author_bio,
         is_featured: formData.is_featured,
-        is_active: true
+        is_active: true,
+        yes24_link: formData.yes24_link || null,
+        kyobo_link: formData.kyobo_link || null,
+        aladin_link: formData.aladin_link || null,
       }
 
       if (editingBook) {
@@ -349,11 +395,8 @@ export default function BookManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 관리자 내비게이션 */}
-      <AdminNavigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div>
+      <div>
 
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-6">
@@ -578,6 +621,32 @@ export default function BookManagementPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                    출판사 리뷰
+                  </label>
+                  <textarea
+                    value={formData.publisher_review}
+                    onChange={(e) => setFormData({...formData, publisher_review: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    rows={6}
+                    placeholder="출판사 리뷰 내용을 입력하세요 (마크다운 문법 사용 가능)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    추천사
+                  </label>
+                  <textarea
+                    value={formData.testimonials}
+                    onChange={(e) => setFormData({...formData, testimonials: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    rows={6}
+                    placeholder="추천사 내용을 입력하세요 (마크다운 문법 사용 가능)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     목차
                   </label>
                   <textarea
@@ -600,6 +669,51 @@ export default function BookManagementPage() {
                     rows={4}
                     placeholder="마크다운 문법을 사용할 수 있습니다"
                   />
+                </div>
+
+                {/* 온라인 서점 링크 */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-medium text-gray-900 border-b pb-2">온라인 서점 링크</h4>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        YES24 링크
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.yes24_link}
+                        onChange={(e) => setFormData({...formData, yes24_link: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="https://www.yes24.com/Product/Goods/..."
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        교보문고 링크
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.kyobo_link}
+                        onChange={(e) => setFormData({...formData, kyobo_link: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="https://product.kyobobook.co.kr/detail/..."
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        알라딘 링크
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.aladin_link}
+                        onChange={(e) => setFormData({...formData, aladin_link: e.target.value})}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        placeholder="https://www.aladin.co.kr/shop/wproduct.aspx?..."
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex items-center">

@@ -65,6 +65,25 @@ export default function ArticleDetailPage() {
     })
   }
 
+  // 본문에서 첫 번째 이미지 URL 추출
+  const extractFirstImageFromContent = (content: string): string | null => {
+    if (!content) return null
+    
+    // 마크다운 이미지 패턴: ![alt](src)
+    const markdownImageMatch = content.match(/!\[[^\]]*\]\(([^)]+)\)/)
+    if (markdownImageMatch) {
+      return markdownImageMatch[1]
+    }
+    
+    // HTML img 태그 패턴: <img src="...">
+    const htmlImageMatch = content.match(/<img[^>]+src=["']([^"']+)["'][^>]*>/i)
+    if (htmlImageMatch) {
+      return htmlImageMatch[1]
+    }
+    
+    return null
+  }
+
   // 마크다운 텍스트에서 줄바꿈을 처리하는 함수
   const preprocessMarkdownForLineBreaks = (content: string) => {
     // 1. 먼저 2개 이상의 연속 줄바꿈을 1개로 정규화
@@ -98,81 +117,130 @@ export default function ArticleDetailPage() {
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeSanitize]}
           components={{
-            p: ({ children }) => <p className="mb-4 leading-relaxed text-gray-700">{children}</p>,
+            p: ({ children }) => <p className="mb-6 leading-relaxed text-gray-600 text-lg">{children}</p>,
             h1: ({ children }) => (
-              <h1 className="text-3xl font-bold mb-6 mt-8 text-gray-900 border-b-2 border-primary-200 pb-2">
-                {children}
+              <h1 className="text-4xl font-bold mb-8 mt-12 text-gray-900 relative">
+                <span className="relative z-10">{children}</span>
+                <div className="absolute bottom-0 left-0 w-16 h-1 bg-primary-500 rounded-full"></div>
               </h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-2xl font-bold mb-4 mt-7 text-gray-900 border-b border-gray-200 pb-1">
+              <h2 className="text-3xl font-bold mb-6 mt-10 text-gray-800 flex items-center">
+                <span className="text-primary-500 mr-3">#</span>
                 {children}
               </h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-xl font-semibold mb-3 mt-6 text-gray-800">
+              <h3 className="text-2xl font-semibold mb-4 mt-8 text-gray-800">
                 {children}
               </h3>
             ),
             h4: ({ children }) => (
-              <h4 className="text-lg font-semibold mb-2 mt-4 text-gray-800">
+              <h4 className="text-xl font-semibold mb-3 mt-6 text-gray-700">
                 {children}
               </h4>
             ),
             ul: ({ children }) => (
-              <ul className="list-disc ml-8 mb-6 space-y-2 pl-4">
+              <ul className="mb-6 space-y-3 list-disc list-inside marker:text-primary-500">
                 {children}
               </ul>
             ),
             ol: ({ children }) => (
-              <ol className="list-decimal ml-8 mb-6 space-y-2 pl-4">
+              <ol className="mb-6 space-y-3 list-decimal list-inside marker:text-primary-500">
                 {children}
               </ol>
             ),
             li: ({ children }) => (
-              <li className="leading-relaxed text-gray-700 ml-4">
+              <li className="leading-relaxed text-gray-600 text-lg ml-6">
                 {children}
               </li>
             ),
             blockquote: ({ children }) => (
-              <blockquote className="border-l-4 border-yellow-400 bg-yellow-50 pl-6 pr-4 py-3 italic my-6 rounded-r-lg">
-                <div className="text-yellow-800">
+              <blockquote className="relative my-8 p-6 bg-gradient-to-r from-primary-50 to-transparent border-l-4 border-primary-500 rounded-r-lg">
+                <svg className="absolute top-4 left-4 w-8 h-8 text-primary-200 opacity-50" fill="currentColor" viewBox="0 0 32 32">
+                  <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36c0 5.088 3.072 8.064 6.624 8.064 3.36 0 5.856-2.688 5.856-5.856 0-3.168-2.208-5.472-5.088-5.472-.576 0-1.344.096-1.536.192.48-3.264 3.552-7.104 6.624-9.024L9.352 4zm16.512 0c-4.8 3.456-8.256 9.12-8.256 15.36 0 5.088 3.072 8.064 6.624 8.064 3.264 0 5.856-2.688 5.856-5.856 0-3.168-2.304-5.472-5.184-5.472-.576 0-1.248.096-1.44.192.48-3.264 3.456-7.104 6.528-9.024L25.864 4z" />
+                </svg>
+                <div className="relative z-10 italic text-gray-700 text-lg pl-8">
                   {children}
                 </div>
               </blockquote>
             ),
-            code: ({ children }) => (
-              <code className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono border">
-                {children}
-              </code>
-            ),
-            pre: ({ children }) => (
-              <pre className="bg-gray-900 text-gray-100 p-6 rounded-lg overflow-x-auto mb-6 border shadow-lg">
-                <code className="text-sm font-mono leading-relaxed">
+            code: ({ children, className, ...props }) => {
+              // 클래스명으로 언어를 확인 (예: language-javascript)
+              const match = /language-(\w+)/.exec(className || '')
+              
+              // match가 있으면 코드 블록의 일부
+              if (match) {
+                return (
+                  <code className={className} {...props}>
+                    {children}
+                  </code>
+                )
+              }
+              
+              // 인라인 코드
+              return (
+                <code className="bg-primary-50 text-primary-700 px-2 py-1 rounded-md text-sm font-mono border border-primary-200" {...props}>
                   {children}
                 </code>
-              </pre>
-            ),
+              )
+            },
+            pre: ({ children, ...props }) => {
+              // pre 태그 내부의 code 요소에서 props 추출
+              const codeElement = children as any
+              const className = codeElement?.props?.className || ''
+              const codeChildren = codeElement?.props?.children || children
+              
+              return (
+                <div className="relative my-8">
+                  <pre className="bg-gray-900 text-gray-100 p-6 rounded-xl overflow-x-auto shadow-xl" {...props}>
+                    <div className="absolute top-4 right-4 flex space-x-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    </div>
+                    <code className={`text-sm font-mono leading-relaxed block ${className}`}>
+                      {codeChildren}
+                    </code>
+                  </pre>
+                </div>
+              )
+            },
             strong: ({ children }) => (
-              <strong className="font-bold text-gray-900">
+              <strong className="font-bold text-gray-900 bg-yellow-100 px-1 rounded">
                 {children}
               </strong>
             ),
             em: ({ children }) => (
-              <em className="italic text-gray-700">
+              <em className="italic text-gray-600 font-medium">
                 {children}
               </em>
             ),
+            img: ({ src, alt, ...props }) => (
+              <img
+                src={src}
+                alt={alt || ''}
+                className="block my-8 mx-auto rounded-lg shadow-lg border border-gray-200"
+                style={{ 
+                  width: '1200px',
+                  height: 'auto',
+                  maxWidth: 'none',
+                  marginLeft: 'calc(50% - 600px)',
+                  marginRight: 'calc(50% - 600px)'
+                }}
+                {...props}
+              />
+            ),
             br: () => <br className="block" />,
             table: ({ children }) => (
-              <div className="overflow-x-auto my-6">
-                <table className="min-w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-sm">
+              <div className="overflow-x-auto my-8">
+                <table className="min-w-full bg-white rounded-lg overflow-hidden shadow-lg">
                   {children}
                 </table>
               </div>
             ),
             thead: ({ children }) => (
-              <thead className="bg-gray-50">
+              <thead className="bg-gradient-to-r from-primary-500 to-primary-600 text-white">
                 {children}
               </thead>
             ),
@@ -182,19 +250,27 @@ export default function ArticleDetailPage() {
               </tbody>
             ),
             tr: ({ children }) => (
-              <tr className="hover:bg-gray-50 transition-colors">
+              <tr className="hover:bg-primary-50 transition-colors">
                 {children}
               </tr>
             ),
             td: ({ children }) => (
-              <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
+              <td className="px-6 py-4 text-sm text-gray-700">
                 {children}
               </td>
             ),
             th: ({ children }) => (
-              <th className="border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-900 bg-gray-100">
+              <th className="px-6 py-4 text-sm font-semibold text-left">
                 {children}
               </th>
+            ),
+            a: ({ children, href }) => (
+              <a href={href} className="text-primary-600 font-medium hover:text-primary-700 hover:underline transition-colors">
+                {children}
+              </a>
+            ),
+            hr: () => (
+              <hr className="my-12 border-t-2 border-gray-200" />
             ),
           }}
         >
@@ -234,11 +310,12 @@ export default function ArticleDetailPage() {
     )
   }
 
-  const imageUrl = article.featured_image_url
+  // 피처드 이미지 URL 결정: featured_image_url이 있으면 사용, 없으면 본문 첫 번째 이미지 사용
+  const imageUrl = article.featured_image_url || extractFirstImageFromContent(article.content || '')
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* 상단 네비게이션 */}
         <div className="mb-6">
           <Link href="/articles" className="inline-flex items-center text-blue-600 hover:text-blue-700">

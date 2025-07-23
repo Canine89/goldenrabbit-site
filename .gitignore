@@ -14,6 +14,16 @@ build/
 .env.test.local
 .env.production.local
 
+# Google Service Account 및 보안 파일
+service-account-file.json
+*service-account*.json
+google-credentials*.json
+
+# 임시 및 백업 파일
+src_legacy_backup/
+debug-*.html
+*.bak
+
 # IDE
 .vscode/
 .idea/

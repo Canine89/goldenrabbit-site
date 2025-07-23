@@ -1,0 +1,15 @@
+scrapy==2.11.2
+requests==2.31.0
+lxml==4.9.3
+cssselect==1.2.0
+Twisted==23.10.0
+pyOpenSSL==23.3.0
+cryptography==41.0.8
+itemadapter==0.8.0
+itemloaders==1.1.0
+jmespath==1.0.1
+parsel==1.8.1
+queuelib==1.6.2
+service-identity==23.1.0
+w3lib==2.1.2
+zope.interface==6.1

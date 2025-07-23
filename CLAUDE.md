@@ -32,3 +32,177 @@
 - **도서 페이지**: 구매 기능 없음, 정보 제공 및 온라인 서점 링크만
 - **토끼상점**: 관리자가 등록한 특별 상품 판매 (실제 구매 기능 포함)
 - **관리자 모드**: 토끼상점 상품 관리 기능
+
+## 데이터베이스 구조 (Supabase)
+
+### 주요 테이블 구조
+
+#### 1. books (도서)
+골든래빗 출간 도서 정보 관리
+```sql
+- id (uuid, PK): 도서 고유 ID
+- title (text): 도서 제목
+- author (text): 저자명
+- category (text): 카테고리 (경제경영, IT전문서, IT활용서, 학습만화, 좋은여름, 수상작품)
+- price (integer): 도서 가격
+- description (text): 도서 설명
+- publisher_review (text): 출판사 리뷰
+- testimonials (text): 추천사
+- cover_image_url (text): 표지 이미지 URL
+- isbn (text): ISBN 번호
+- page_count (integer): 페이지 수
+- publication_date (date): 출간일
+- table_of_contents (text): 목차
+- author_bio (text): 저자 소개
+- is_featured (boolean): 추천 도서 여부
+- is_active (boolean): 활성화 상태
+- yes24_link, kyobo_link, aladin_link, ridibooks_link: 온라인 서점 링크
+- size (text): 도서 크기 (예: 152*225*15mm)
+```
+
+#### 2. articles (기술 아티클)
+IT 기술 아티클 및 블로그 포스트
+```sql
+- id (uuid, PK): 아티클 고유 ID
+- title (text): 제목
+- content (text): 본문 내용
+- summary (text): 요약
+- author (text): 작성자
+- category (text): 카테고리 (기본값: 'Tech')
+- featured_image_url (text): 대표 이미지 URL
+- is_published (boolean): 발행 상태
+- view_count (integer): 조회수
+- excerpt (text): 발췌문
+- tags (array): 태그 배열
+- is_featured (boolean): 추천 글 여부
+```
+
+#### 3. profiles (사용자 프로필)
+사용자 정보 및 교수 인증 정보
+```sql
+- id (uuid, PK): 사용자 고유 ID (auth.users 테이블과 연결)
+- username (text, unique): 사용자명
+- email (text): 이메일
+- role (text): 역할 (기본값: 'customer')
+- is_active (boolean): 활성화 상태
+- phone (text): 전화번호
+- university (text): 대학명 (교수용)
+- department (text): 학과명 (교수용)
+- course (text): 강의명 (교수용)
+- professor_book_id (uuid): 교재 도서 ID
+- professor_message (text): 교수 메시지
+- professor_application_date (timestamptz): 교수 신청일
+- full_name (text): 실명
+```
+
+#### 4. rabbit_store_products (토끼상점 상품)
+관리자가 등록하는 특별 상품
+```sql
+- id (uuid, PK): 상품 고유 ID
+- name (text): 상품명
+- description (text): 상품 설명
+- price (integer): 가격
+- stock_quantity (integer): 재고 수량
+- image_url (text): 상품 이미지 URL
+- category (text): 카테고리
+- is_active (boolean): 판매 활성화 상태
+```
+
+#### 5. orders (주문)
+토끼상점 주문 정보
+```sql
+- id (uuid, PK): 주문 고유 ID
+- user_id (uuid): 주문자 ID
+- total_amount (integer): 총 주문 금액
+- status (text): 주문 상태 (pending, confirmed, shipped, delivered, cancelled)
+- shipping_address (text): 배송 주소
+- customer_name, customer_phone, customer_email: 고객 정보
+```
+
+#### 6. order_items (주문 상품)
+주문에 포함된 상품 정보
+```sql
+- id (uuid, PK): 주문 상품 ID
+- order_id (uuid): 주문 ID
+- product_id (uuid): 상품 ID
+- quantity (integer): 수량
+- price (integer): 단가
+```
+
+#### 7. professor_resources (교수 자료실)
+교수용 강의 자료 관리
+```sql
+- id (uuid, PK): 자료 고유 ID
+- book_id (uuid): 관련 도서 ID
+- resource_type (text): 자료 유형 (lecture_slides, source_code, book_info, copyright)
+- title (text): 자료 제목
+- description (text): 자료 설명
+- file_url (text): 파일 다운로드 URL
+- download_count (integer): 다운로드 횟수
+- is_active (boolean): 활성화 상태
+```
+
+#### 8. professor_applications (교수 신청)
+교수 자료실 이용 신청 관리
+```sql
+- id (uuid, PK): 신청 고유 ID
+- name, email, phone: 신청자 정보
+- university, department, position, course: 소속 정보
+- book_id (uuid): 교재 도서 ID
+- message (text): 신청 메시지
+- status (text): 승인 상태 (pending, reviewing, approved, rejected)
+- is_approved (boolean): 승인 여부
+- approved_at, approved_by: 승인 정보
+- user_id (uuid): 연결된 사용자 ID
+```
+
+#### 9. community_posts (커뮤니티 게시글)
+사용자 커뮤니티 게시판
+```sql
+- id (uuid, PK): 게시글 ID
+- user_id (uuid): 작성자 ID
+- title (text): 제목
+- content (text): 내용
+- category (text): 카테고리 (기본값: 'general')
+- view_count, like_count: 조회수, 좋아요 수
+```
+
+#### 10. community_comments (커뮤니티 댓글)
+게시글 댓글
+```sql
+- id (uuid, PK): 댓글 ID
+- post_id (uuid): 게시글 ID
+- user_id (uuid): 작성자 ID
+- content (text): 댓글 내용
+```
+
+#### 11. events (이벤트)
+이벤트 및 공지사항
+```sql
+- id (uuid, PK): 이벤트 ID
+- title (text): 제목
+- description (text): 설명
+- content (text): 상세 내용
+- start_date, end_date: 시작일, 종료일
+- featured_image_url: 대표 이미지
+- is_active: 활성화 상태
+```
+
+#### 12. author_applications (저자 신청)
+출간 희망 저자 신청 관리
+```sql
+- id (uuid, PK): 신청 ID
+- name, email, phone: 신청자 정보
+- book_title, book_description: 출간 희망 도서 정보
+- author_bio: 저자 소개
+- status: 승인 상태 (pending, reviewing, approved, rejected)
+```
+
+### 주요 관계 (Foreign Keys)
+- profiles.id ↔ auth.users.id (Supabase 인증)
+- books ↔ professor_resources (도서별 교수 자료)
+- books ↔ professor_applications (교재 선택)
+- profiles ↔ orders (주문자 정보)
+- orders ↔ order_items (주문 상품)
+- rabbit_store_products ↔ order_items (상품 정보)
+- community_posts ↔ community_comments (게시글-댓글)

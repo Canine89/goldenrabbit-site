@@ -44,20 +44,22 @@ export default function AdminDashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('is_active', true)
 
-      // 주문 수 조회
-      const { count: orderCount } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
+      // 주문 수 조회 - orders 테이블이 아직 구현되지 않음
+      const orderCount = 0
+      // const { count: orderCount } = await supabase
+      //   .from('orders')
+      //   .select('*', { count: 'exact', head: true })
 
-      // 최근 주문 조회
-      const { data: recentOrders } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          profiles (username, email)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(5)
+      // 최근 주문 조회 - orders 테이블이 아직 구현되지 않음
+      const recentOrders: any[] = []
+      // const { data: recentOrders } = await supabase
+      //   .from('orders')
+      //   .select(`
+      //     *,
+      //     profiles (username, email)
+      //   `)
+      //   .order('created_at', { ascending: false })
+      //   .limit(5)
 
       setStats({
         totalBooks: bookCount || 0,
@@ -135,13 +137,13 @@ export default function AdminDashboard() {
       icon: '🛍️',
       color: 'bg-orange-500'
     },
-    {
-      title: '주문 관리',
-      description: '주문 현황 관리',
-      href: '/admin/orders',
-      icon: '📋',
-      color: 'bg-green-500'
-    },
+    // {
+    //   title: '주문 관리',
+    //   description: '주문 현황 관리',
+    //   href: '/admin/orders',
+    //   icon: '📋',
+    //   color: 'bg-green-500'
+    // }, // TODO: 주문 관리 페이지 구현 필요
     {
       title: '사용자 관리',
       description: '회원 관리',
@@ -156,13 +158,13 @@ export default function AdminDashboard() {
       icon: '📝',
       color: 'bg-indigo-500'
     },
-    {
-      title: '이벤트 관리',
-      description: '이벤트 기획 및 관리',
-      href: '/admin/events',
-      icon: '🎉',
-      color: 'bg-pink-500'
-    },
+    // {
+    //   title: '이벤트 관리',
+    //   description: '이벤트 기획 및 관리',
+    //   href: '/admin/events',
+    //   icon: '🎉',
+    //   color: 'bg-pink-500'
+    // }, // TODO: 이벤트 관리 페이지 구현 필요
     {
       title: '교수자료실',
       description: '교수 자료 관리',
@@ -230,8 +232,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* 최근 주문 - 심플 디자인 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+      {/* 최근 주문 - 심플 디자인 (TODO: orders 테이블 구현 후 활성화) */}
+      {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="px-6 py-4 border-b flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">최근 주문</h3>
@@ -241,8 +243,8 @@ export default function AdminDashboard() {
             >
               전체 보기 →
             </Link>
-          </div>
-          
+          </div> */}
+          {/* 
           <div className="p-6">
             {stats.recentOrders.length === 0 ? (
               <div className="text-center py-8">
@@ -303,7 +305,7 @@ export default function AdminDashboard() {
             )}
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   )
 }

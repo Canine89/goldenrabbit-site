@@ -20,11 +20,13 @@ interface Book {
   cover_image_url?: string
   category: string
   isbn?: string
-  pages?: number
+  page_count?: number
   size?: string
   publication_date?: string
   table_of_contents?: string
   description?: string
+  publisher_review?: string
+  testimonials?: string
   is_featured: boolean
   is_active: boolean
   created_at: string
@@ -137,44 +139,44 @@ export default function BookDetailPage() {
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeSanitize]}
           components={{
-            p: ({ children }) => <p className="mb-4 leading-relaxed text-gray-700">{children}</p>,
+            p: ({ children }) => <p className="mb-2 leading-normal text-gray-700">{children}</p>,
             h1: ({ children }) => (
-              <h1 className="text-3xl font-bold mb-6 mt-8 text-gray-900 border-b-2 border-primary-200 pb-2">
+              <h1 className="text-3xl font-bold mb-4 mt-6 text-gray-900 border-b-2 border-primary-200 pb-2">
                 {children}
               </h1>
             ),
             h2: ({ children }) => (
-              <h2 className="text-2xl font-bold mb-4 mt-7 text-gray-900 border-b border-gray-200 pb-1">
+              <h2 className="text-2xl font-bold mb-3 mt-5 text-gray-900 border-b border-gray-200 pb-1">
                 {children}
               </h2>
             ),
             h3: ({ children }) => (
-              <h3 className="text-xl font-semibold mb-3 mt-6 text-gray-800">
+              <h3 className="text-xl font-semibold mb-2 mt-4 text-gray-800">
                 {children}
               </h3>
             ),
             h4: ({ children }) => (
-              <h4 className="text-lg font-semibold mb-2 mt-4 text-gray-800">
+              <h4 className="text-lg font-semibold mb-2 mt-3 text-gray-800">
                 {children}
               </h4>
             ),
             ul: ({ children }) => (
-              <ul className="list-disc ml-8 mb-6 space-y-2 pl-4">
+              <ul className="list-disc ml-8 mb-4 space-y-1 pl-4">
                 {children}
               </ul>
             ),
             ol: ({ children }) => (
-              <ol className="list-decimal ml-8 mb-6 space-y-2 pl-4">
+              <ol className="list-decimal ml-8 mb-4 space-y-1 pl-4">
                 {children}
               </ol>
             ),
             li: ({ children }) => (
-              <li className="leading-relaxed text-gray-700 ml-4">
+              <li className="leading-normal text-gray-700 ml-4">
                 {children}
               </li>
             ),
             blockquote: ({ children }) => (
-              <blockquote className="border-l-4 border-yellow-400 bg-yellow-50 pl-6 pr-4 py-3 italic my-6 rounded-r-lg">
+              <blockquote className="border-l-4 border-yellow-400 bg-yellow-50 pl-6 pr-4 py-3 italic my-4 rounded-r-lg">
                 <div className="text-yellow-800">
                   {children}
                 </div>
@@ -186,8 +188,8 @@ export default function BookDetailPage() {
               </code>
             ),
             pre: ({ children }) => (
-              <pre className="bg-gray-900 text-gray-100 p-6 rounded-lg overflow-x-auto mb-6 border shadow-lg">
-                <code className="text-sm font-mono leading-relaxed">
+              <pre className="bg-gray-900 text-gray-100 p-6 rounded-lg overflow-x-auto mb-4 border shadow-lg">
+                <code className="text-sm font-mono leading-normal">
                   {children}
                 </code>
               </pre>
@@ -204,7 +206,7 @@ export default function BookDetailPage() {
             ),
             br: () => <br className="block" />,
             table: ({ children }) => (
-              <div className="overflow-x-auto my-6">
+              <div className="overflow-x-auto my-4">
                 <table className="min-w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-sm">
                   {children}
                 </table>
@@ -250,12 +252,11 @@ export default function BookDetailPage() {
     }
   }
 
-  const onlineStoreLinks = [
-    { name: 'YES24', url: onlineStores.yes24_url, color: 'bg-blue-600' },
-    { name: '교보문고', url: onlineStores.kyobo_url, color: 'bg-green-600' },
-    { name: '알라딘', url: onlineStores.aladin_url, color: 'bg-purple-600' },
-    { name: '리디북스', url: onlineStores.ridibooks_url, color: 'bg-red-600' },
-  ].filter(store => store.url)
+  const onlineStoreLinks = book ? [
+    { name: 'YES24', url: (book as any).yes24_link, color: 'bg-blue-600' },
+    { name: '교보문고', url: (book as any).kyobo_link, color: 'bg-green-600' },
+    { name: '알라딘', url: (book as any).aladin_link, color: 'bg-purple-600' },
+  ].filter(store => store.url) : []
 
   if (loading) {
     return (
@@ -292,11 +293,11 @@ export default function BookDetailPage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
           {/* 도서 이미지 */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-md">
-              <div className="w-full h-96 bg-white rounded-lg shadow-lg overflow-hidden relative">
+          <div className="lg:col-span-2 flex justify-center lg:justify-end">
+            <div className="w-full max-w-md lg:max-w-none">
+              <div className="w-full h-96 lg:h-[480px] bg-white rounded-lg shadow-lg overflow-hidden relative">
                 <SmartImage
                   src={book.cover_image_url}
                   alt={book.title}
@@ -318,63 +319,114 @@ export default function BookDetailPage() {
           </div>
 
           {/* 도서 정보 */}
-          <div>
-            <div className="mb-6">
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-lg p-6 shadow-sm">
               {book.is_featured && (
-                <span className="inline-block px-3 py-1 bg-secondary-100 text-secondary-800 text-sm font-medium rounded-full mb-4">
+                <span className="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full mb-4">
+                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
                   추천 도서
                 </span>
               )}
-              <h1 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">{formatTextWithBreaks(book.title)}</h1>
-              <p className="text-xl text-gray-600 mb-6">{formatTextWithBreaks(book.author)}</p>
-              <p className="text-3xl font-bold text-primary-600 mb-8">{formatPrice(book.price)}원</p>
-            </div>
+              
+              <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-3 leading-tight">
+                {formatTextWithBreaks(book.title)}
+              </h1>
+              
+              <div className="flex items-center mb-4">
+                <svg className="w-5 h-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <p className="text-lg text-gray-600">{formatTextWithBreaks(book.author)}</p>
+              </div>
+              
+              <div className="flex items-center mb-6">
+                <svg className="w-6 h-6 text-primary-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                </svg>
+                <p className="text-2xl font-bold text-primary-600">{formatPrice(book.price)}원</p>
+              </div>
 
-            {/* 도서 기본 정보 */}
-            <div className="bg-white rounded-lg p-6 shadow-sm mb-8">
-              <h3 className="text-lg font-semibold mb-4">도서 정보</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">ISBN:</span>
-                  <span className="ml-2 font-medium">{book.isbn || '-'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">페이지:</span>
-                  <span className="ml-2 font-medium">{book.pages ? `${book.pages}쪽` : '-'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">크기:</span>
-                  <span className="ml-2 font-medium">{book.size || '-'}</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">출간일:</span>
-                  <span className="ml-2 font-medium">{formatDate(book.publication_date)}</span>
+              {/* 구분선 */}
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">도서 정보</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-500">ISBN</span>
+                    <span className={`text-sm ${book.isbn ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+                      {book.isbn || '입력 예정'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-500">페이지</span>
+                    <span className={`text-sm ${book.page_count ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+                      {book.page_count ? `${book.page_count}쪽` : '입력 예정'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-500">크기</span>
+                    <span className={`text-sm ${book.size ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+                      {book.size || '입력 예정'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span className="text-sm font-medium text-gray-500">출간일</span>
+                    <span className={`text-sm ${book.publication_date ? 'text-gray-900' : 'text-gray-400 italic'}`}>
+                      {book.publication_date ? formatDate(book.publication_date) : '입력 예정'}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* 온라인 서점 링크 */}
-            {onlineStoreLinks.length > 0 && (
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4">온라인 서점에서 구매하기</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  {onlineStoreLinks.map((store) => (
-                    <a
-                      key={store.name}
-                      href={store.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`${store.color} text-white text-center py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-opacity`}
-                    >
-                      {store.name}에서 구매
-                    </a>
+              {/* 온라인 서점 링크 */}
+              <div className="pt-6">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">온라인 서점에서 구매하기</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {[
+                    { name: 'YES24', url: (book as any)?.yes24_link, color: 'bg-blue-600' },
+                    { name: '교보문고', url: (book as any)?.kyobo_link, color: 'bg-green-600' },
+                    { name: '알라딘', url: (book as any)?.aladin_link, color: 'bg-purple-600' },
+                  ].map((store) => (
+                    store.url ? (
+                      <a
+                        key={store.name}
+                        href={store.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${store.color} text-white text-center py-3 px-4 rounded-lg font-medium hover:opacity-90 transition-all hover:scale-105 flex items-center justify-center`}
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        {store.name}
+                      </a>
+                    ) : (
+                      <div
+                        key={store.name}
+                        className="bg-gray-200 text-gray-400 text-center py-3 px-4 rounded-lg font-medium flex items-center justify-center cursor-not-allowed"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="italic">{store.name} 입력 예정</span>
+                      </div>
+                    )
                   ))}
                 </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  * 온라인 서점으로 이동합니다. 가격은 각 서점에서 확인해주세요.
-                </p>
+                {onlineStoreLinks.length > 0 && (
+                  <p className="text-xs text-gray-500 mt-3 flex items-center">
+                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    온라인 서점으로 이동합니다. 가격은 각 서점에서 확인해주세요.
+                  </p>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -383,7 +435,9 @@ export default function BookDetailPage() {
           <div className="border-b border-gray-200">
             <nav className="flex">
               {[
-                { id: 'info', name: '상세정보' },
+                { id: 'info', name: '책 소개' },
+                { id: 'publisher_review', name: '출판사 리뷰' },
+                { id: 'testimonials', name: '추천사' },
                 { id: 'toc', name: '목차' },
                 { id: 'author', name: '저자소개' },
               ].map((tab) => (
@@ -405,12 +459,38 @@ export default function BookDetailPage() {
           <div className="p-6">
             {activeTab === 'info' && (
               <div>
-                <h3 className="text-lg font-semibold mb-4">상세 정보</h3>
+                <h3 className="text-lg font-semibold mb-4">책 소개</h3>
                 <div className="prose prose-gray max-w-none text-gray-700">
                   {book.description ? (
                     renderContent(book.description)
                   ) : (
-                    <p className="text-gray-500">상세 정보가 준비 중입니다.</p>
+                    <p className="text-gray-500">책 소개가 준비 중입니다.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'publisher_review' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">출판사 리뷰</h3>
+                <div className="prose prose-gray max-w-none text-gray-700">
+                  {book.publisher_review ? (
+                    renderContent(book.publisher_review)
+                  ) : (
+                    <p className="text-gray-500">출판사 리뷰가 준비 중입니다.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'testimonials' && (
+              <div>
+                <h3 className="text-lg font-semibold mb-4">추천사</h3>
+                <div className="prose prose-gray max-w-none text-gray-700">
+                  {book.testimonials ? (
+                    renderContent(book.testimonials)
+                  ) : (
+                    <p className="text-gray-500">추천사가 준비 중입니다.</p>
                   )}
                 </div>
               </div>

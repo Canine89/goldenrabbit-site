@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { createSupabaseClient } from '../../lib/supabase-client'
 import Loading from '../../components/ui/Loading'
 import Button from '../../components/ui/Button'
-import AdminNavigation from '../components/AdminNavigation'
 
 interface User {
   id: string
@@ -26,6 +25,13 @@ interface User {
   professor_application_date?: string
 }
 
+interface DrivePermissionResult {
+  success: boolean
+  permissionId?: string
+  folderName?: string
+  error?: string
+}
+
 export default function UserManagementPage() {
   const router = useRouter()
   const [users, setUsers] = useState<User[]>([])
@@ -43,32 +49,19 @@ export default function UserManagementPage() {
   const [detailUser, setDetailUser] = useState<User | null>(null)
   const [books, setBooks] = useState<any[]>([])
   
-  // Google Drive 관련 상태 (수동 권한 부여용)
-  const [driveFolders, setDriveFolders] = useState<{[key: string]: {name: string}}>({})
-  // 수동 권한 부여만 사용하므로 자동 권한 부여 관련 상태 제거됨
+  // 불필요한 상태 제거됨
 
   const supabase = createSupabaseClient()
   
-  // 📁 Google Drive 폴더 설정 (수동 권한 부여 방식)
-  const DRIVE_FOLDERS_CONFIG = [
+  // Google Drive 폴더 설정 (활성 폴더만)
+  const DRIVE_FOLDERS = [
     { 
       id: '1p1RcwJlrJbIVP7IOpmTfwrY1Eg2SKIsN', 
-      name: '08. 골든래빗 도서 교안(PPT)', 
-      fallbackName: '08. 골든래빗 도서 교안(PPT)',
-      status: 'manual_only' // 수동 권한 부여만 지원
-    },
-    { 
-      id: '1nQNK776WO84RqCXhwC6reOVPvLojZE9Z', 
-      name: '07. 골든래빗 도서 교안(PPT)', 
-      fallbackName: '07. 골든래빗 도서 교안(PPT)',
-      status: 'manual_only' // 수동 권한 부여만 지원
+      name: '08. 골든래빗 도서 교안(PPT)'
     }
+    // 폴더 2는 권한 설정 제한으로 제외: 1nQNK776WO84RqCXhwC6reOVPvLojZE9Z
   ]
 
-  // 진단 도구 제거됨 - 수동 모드에서는 불필요
-  
-  // 수동 권한 부여만 사용하는 모드 (API 호출 없음)
-  const USE_MANUAL_MODE_ONLY = true
   const roleOptions = ['전체', '사용자', '관리자', '교수', '교수회원 대기']
   const statusOptions = ['전체', '활성', '비활성']
 
@@ -147,7 +140,7 @@ export default function UserManagementPage() {
       const usersData = (data || []).map(profile => ({
         ...profile,
         email: profile.username || 'Unknown',
-        is_active: profile.is_active ?? true // is_active가 null이면 true로 설정
+        is_active: profile.is_active ?? true
       }))
       
       setUsers(usersData)
@@ -210,47 +203,12 @@ export default function UserManagementPage() {
     setFilteredUsers(filtered)
   }
 
-  // Google Drive API 관련 함수들
-  const getAccessToken = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      return session?.provider_token
-    } catch (error) {
-      console.error('액세스 토큰 가져오기 실패:', error)
-      return null
-    }
-  }
-
-  // fetchFolderInfo 함수 제거됨 - 수동 모드에서는 하드코딩된 이름 사용
-
-  const loadFolderNames = async () => {
-    const folderData: {[key: string]: {name: string}} = {}
-    
-    // 수동 모드: API 호출 없이 하드코딩된 폴더 이름 사용
-    if (USE_MANUAL_MODE_ONLY) {
-      console.log('📁 수동 모드로 폴더 정보 설정')
-      for (const folder of DRIVE_FOLDERS_CONFIG) {
-        folderData[folder.id] = { name: folder.name }
-        console.log(`✅ ${folder.name} (ID: ${folder.id}) - 수동 권한 부여 가능`)
-      }
-      setDriveFolders(folderData)
-      return
-    }
-    
-    // API 호출 모드는 비활성화됨 - 수동 모드만 사용
-  }
-
-  // 자동 권한 부여 기능 제거됨 - 수동 권한 부여만 사용
+  // Google Drive API 관련 함수들 제거됨 - 수동 권한 부여 방식으로 변경
 
   const handleRoleChange = async (user: User) => {
     setSelectedUser(user)
     setNewRole(user.role)
     setShowRoleModal(true)
-    
-    // 교수로 변경하는 경우 Drive 폴더 정보 로드
-    if (user.professor_application_date) {
-      await loadFolderNames()
-    }
   }
 
   const updateUserRole = async () => {
@@ -346,44 +304,31 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* 관리자 내비게이션 */}
-      <AdminNavigation />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div>
+      <div>
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">사용자 관리</h1>
             <p className="text-gray-600 mt-1">총 {users.length}명의 사용자 등록됨</p>
           </div>
-          
-          {/* 수동 Google Drive 권한 부여 모드 */}
-          <div className="flex gap-2">
-            <span className="px-3 py-2 text-sm text-green-700 bg-green-100 rounded">
-              📁 수동 권한 부여 모드
-            </span>
-          </div>
         </div>
 
-        {/* Google Drive 수동 권한 부여 안내 */}
+        {/* Google Drive 수동 권한 관리 안내 */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-          <div className="flex items-start">
-            <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+          <div className="flex items-start gap-3">
+            <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <h3 className="text-sm font-medium text-blue-800 mb-1">📁 Google Drive 수동 권한 부여 모드</h3>
-              <div className="text-sm text-blue-700">
-                <p>교수 승인 시 Google Drive 폴더에 대한 권한을 수동으로 부여할 수 있습니다.</p>
-                <p className="mt-1">
-                  <strong>사용 방법:</strong> 교수 승인 시 나타나는 "📁 수동 권한 설정" 버튼을 클릭하여 
-                  Google Drive에서 직접 해당 사용자를 폴더에 추가하세요.
-                </p>
-                <p className="mt-1 font-medium">
-                  📂 07. 골든래빗 도서 교안(PPT) | 📂 08. 골든래빗 도서 교안(PPT)
-                </p>
-              </div>
+              <h4 className="text-sm font-medium text-blue-800 mb-1">📁 Google Drive 권한 관리 안내</h4>
+              <p className="text-sm text-blue-700">
+                교수회원 승인 시 Google Drive 자료실 폴더에 대한 권한을 수동으로 부여해주세요. 
+                교수로 역할 변경할 때 자세한 안내가 표시됩니다.
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                📂 관리 대상 폴더: {DRIVE_FOLDERS.map(f => f.name).join(', ')}
+              </p>
             </div>
           </div>
         </div>
@@ -619,47 +564,58 @@ export default function UserManagementPage() {
               </div>
             </div>
 
-            {/* Google Drive 자료실 권한 부여 섹션 */}
+            {/* Google Drive 자료실 권한 부여 안내 */}
             {newRole === 'professor' && selectedUser.professor_application_date && (
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Google Drive 자료실 권한 부여</h3>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm text-blue-800 mb-4">
-                    교수로 승인하기 전에 필요한 Google Drive 자료실에 접근 권한을 부여해주세요.
-                  </p>
-                  <div className="space-y-3">
-                    {Object.keys(driveFolders).length === 0 ? (
-                      <div className="text-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="text-sm text-gray-500 mt-2">폴더 정보를 가져오는 중...</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">📁 Google Drive 자료실 권한 부여</h3>
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.876c1.429 0 2.63-1.104 2.744-2.515l.879-10.871c.116-1.445-.883-2.703-2.333-2.703H2.828c-1.45 0-2.449 1.258-2.333 2.703l.88 10.87c.113 1.412 1.314 2.516 2.743 2.516z" />
+                    </svg>
+                    <div>
+                      <h4 className="text-sm font-medium text-amber-800 mb-2">교수 승인 전 필수 확인사항</h4>
+                      <p className="text-sm text-amber-700 mb-3">
+                        다음 사용자를 Google Drive 교수 자료실에 추가하셨나요?
+                      </p>
+                      <div className="bg-white rounded p-3 mb-3">
+                        <p className="text-sm font-medium text-gray-900">👤 사용자 이메일:</p>
+                        <p className="text-base font-mono bg-gray-100 px-2 py-1 rounded mt-1">{selectedUser.email}</p>
                       </div>
-                    ) : (
-                      Object.entries(driveFolders).map(([folderId, folderInfo]) => (
-                        <div key={folderId} className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                          <div className="flex items-center">
-                            <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2V7z" />
-                            </svg>
-                            <span className="text-sm font-medium text-gray-900">{folderInfo.name}</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => {
-                                const driveUrl = `https://drive.google.com/drive/folders/${folderId}`
-                                window.open(driveUrl, '_blank')
-                              }}
-                              className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
-                              title="Google Drive에서 직접 권한을 부여하세요"
-                            >
-                              📁 수동 권한 설정
-                            </button>
-                          </div>
+                      <div className="bg-white rounded p-3 mb-3">
+                        <p className="text-sm font-medium text-gray-900 mb-2">📂 대상 폴더:</p>
+                        <div className="space-y-2">
+                          {DRIVE_FOLDERS.map(folder => (
+                            <div key={folder.id} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                              <span className="text-sm text-gray-700">{folder.name}</span>
+                              <button
+                                onClick={() => window.open(`https://drive.google.com/drive/folders/${folder.id}`, '_blank')}
+                                className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                              >
+                                📁 폴더 열기
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))
-                    )}
+                      </div>
+                      <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                        <p className="text-xs text-blue-800 font-medium mb-1">💡 권한 부여 방법:</p>
+                        <ol className="text-xs text-blue-700 space-y-1">
+                          <li>1. 위 "📁 폴더 열기" 버튼으로 폴더 접속</li>
+                          <li>2. 폴더 우클릭 → "공유" 선택</li>
+                          <li>3. 사용자 이메일 추가</li>
+                          <li>4. 권한을 "뷰어" 또는 "편집자"로 설정</li>
+                          <li>5. "전송" 클릭하여 권한 부여 완료</li>
+                        </ol>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-xs text-blue-600 mt-3">
-                    참고: 권한 부여는 선택사항이며, 나중에 수동으로도 설정할 수 있습니다.
+                </div>
+                
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-800 font-medium">
+                    ⚠️ Google Drive 권한을 먼저 부여한 후 교수로 승인해주세요.
                   </p>
                 </div>
               </div>
