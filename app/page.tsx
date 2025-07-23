@@ -31,46 +31,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 카테고리 섹션 */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              카테고리별 도서
-            </h2>
-            <p className="text-lg text-gray-600">
-              다양한 분야의 전문서와 실용서를 만나보세요
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { name: '경제경영', href: '/books/economy', icon: '📈', description: '비즈니스 성공 전략' },
-              { name: 'IT전문서', href: '/books/it-professional', icon: '💻', description: '개발자 전문서적' },
-              { name: 'IT활용서', href: '/books/it-practical', icon: '🔧', description: '실무 활용 가이드' },
-              { name: '학습만화', href: '/books/comic', icon: '📚', description: '쉽고 재미있게' },
-              { name: '좋은여름', href: '/books/good-summer', icon: '🌞', description: '여름 특별 기획' },
-              { name: '수상작품', href: '/books/award', icon: '🏆', description: '검증된 우수작' },
-            ].map((category) => (
-              <Link
-                key={category.name}
-                href={category.href}
-                className="group p-6 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-blue-300 transition-all duration-200 text-center"
-              >
-                <div className="text-5xl mb-4 group-hover:scale-105 transition-transform duration-200">
-                  {category.icon}
-                </div>
-                <h3 className="text-xl font-bold mb-2 group-hover:text-blue-600 transition-colors">
-                  {category.name}
-                </h3>
-                <p className="text-gray-600 text-sm">
-                  {category.description}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* 추천 도서 섹션 */}
       <FeaturedBooks />
