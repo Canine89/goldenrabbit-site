@@ -6,16 +6,7 @@ import { createSupabaseClient } from '../lib/supabase-client'
 import SmartImage from './SmartImage'
 import Card from './ui/Card'
 import Loading from './ui/Loading'
-
-interface Book {
-  id: string
-  title: string
-  author: string
-  price: number
-  cover_image_url?: string
-  is_featured: boolean
-  created_at: string
-}
+import type { Book } from '../../lib/actions/types'
 
 export default function FeaturedBooks() {
   const [featuredBooks, setFeaturedBooks] = useState<Book[]>([])

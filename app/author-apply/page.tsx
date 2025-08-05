@@ -9,135 +9,39 @@ import Input from '../components/ui/Input'
 import Loading from '../components/ui/Loading'
 import Card from '../components/ui/Card'
 
-export default function ProfessorApplicationPage() {
+export default function AuthorApplicationPage() {
   const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [books, setBooks] = useState<any[]>([])
   const supabase = createSupabaseClient()
 
   const [formData, setFormData] = useState({
     name: '',
-    institution: '',
-    institution_url: '',
-    position: '',
+    email: '',
     phone: '',
-    department: '',
-    lecture_topics: '',
-    interested_books: [] as string[],
-    request_type: [] as string[]
+    book_title: '',
+    book_description: '',
+    author_bio: '',
+    portfolio_url: '',
+    experience: '',
+    motivation: ''
   })
 
-  // 도서 목록
-  const booksList = [
-    '[이게 되네?] 이게 되네 챗GPT 미친 활용법 71제',
-    '[Must Have] 코드팩토리의 플러터 프로그래밍(3판)',
-    '[되기] 파이썬 데이터 분석가 되기+챗GPT',
-    '챗GPT와 함께 배우는 엔트리 마스터하기',
-    '[되기] 코딩 테스트 합격자 되기(자바스크립트 편)',
-    '[되기] 코딩 테스트 합격자 되기(C++ 편)',
-    '[되기] 스프링 부트 3 백엔드 개발자 되기(자바 편)(2판)',
-    '[되기] 코딩 테스트 합격자 되기(자바 편)',
-    '[Must Have] 코드팩토리의 플러터 프로그래밍(2판)',
-    '[되기] 코딩 테스트 합격자 되기(파이썬 편)',
-    '[Must Have] 성낙현의 JSP 자바 웹 프로그래밍(2판)',
-    '[되기] Node.js 백엔드 개발자 되기',
-    '[Must Have] 텐초의 파이토치 딥러닝 특강',
-    '[Must Have] 데싸노트의 실전에서 통하는 머신러닝',
-    '[Must Have] 코로나보드로 배우는 실전 웹 서비스 개발',
-    '[Must Have] 머신러닝·딥러닝 문제해결 전략(세종도서 선정작)',
-    '[Must Have] Joyce의 안드로이드 앱 프로그래밍 with 코틀린(세종도서 선정작)',
-    '[Must Have] 성낙현의 JSP 자바 웹 프로그래밍',
-    '[Must Have] 나성호의 R 데이터 분석 입문',
-    '[Must Have] 박미정의 깃&깃허브 입문',
-    '[Must Have] 이재환의 자바 프로그래밍 입문',
-    '[Must Have] 비전공자를 위한 첫 코딩 챌린지 with HTML&CSS',
-    '[Must Have] Tucker의 Go 언어 프로그래밍(세종도서 선정작)'
-  ]
-
-  const requestTypes = [
-    '관심도서 전자책 증정',
-    '관심도서 교안 증정'
-  ]
-
-  // 로그인 확인
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  const checkAuth = async () => {
-    try {
-      const { data: { user }, error: userError } = await supabase.auth.getUser()
-      
-      if (userError || !user) {
-        setUser(null)
-        setLoading(false)
-        return
-      }
-
-      setUser(user)
-      setLoading(false)
-    } catch (error) {
-      console.error('인증 확인 실패:', error)
-      setUser(null)
-      setLoading(false)
-    }
-  }
-
-  const handleGoogleLogin = async () => {
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: 'openid email profile https://www.googleapis.com/auth/drive'
-        }
-      })
-      
-      if (error) {
-        console.error('로그인 오류:', error)
-        alert('로그인 중 오류가 발생했습니다.')
-      }
-    } catch (error) {
-      console.error('로그인 처리 오류:', error)
-      alert('로그인 중 오류가 발생했습니다.')
-    }
-  }
-
-  const handleBookSelection = (bookTitle: string) => {
-    setFormData(prev => ({
-      ...prev,
-      interested_books: prev.interested_books.includes(bookTitle)
-        ? prev.interested_books.filter(book => book !== bookTitle)
-        : prev.interested_books.length >= 2 
-          ? prev.interested_books  // 2권 초과 선택 방지
-          : [...prev.interested_books, bookTitle]
-    }))
-  }
-
-  const handleRequestTypeSelection = (requestType: string) => {
-    setFormData(prev => ({
-      ...prev,
-      request_type: prev.request_type.includes(requestType)
-        ? prev.request_type.filter(type => type !== requestType)
-        : [...prev.request_type, requestType]
-    }))
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     // 필수 필드 검증
-    if (!formData.name || !formData.institution || !formData.institution_url || 
-        !formData.phone || !formData.department || !formData.lecture_topics ||
-        formData.interested_books.length === 0 || formData.request_type.length === 0) {
+    if (!formData.name || !formData.email || !formData.phone || 
+        !formData.book_title || !formData.book_description || !formData.author_bio) {
       alert('모든 필수 항목을 입력해주세요.')
       return
     }
 
-    if (formData.interested_books.length > 2) {
-      alert('관심 도서는 최대 2권까지 선택 가능합니다.')
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email)) {
+      alert('올바른 이메일 형식을 입력해주세요.')
       return
     }
 
@@ -145,40 +49,38 @@ export default function ProfessorApplicationPage() {
       setSubmitting(true)
 
       const applicationData = {
-        user_id: user.id,
-        email: user.email,
         name: formData.name,
-        institution: formData.institution,
-        institution_url: formData.institution_url,
-        position: formData.position,
+        email: formData.email,
         phone: formData.phone,
-        department: formData.department,
-        lecture_topics: formData.lecture_topics,
-        interested_books: formData.interested_books,
-        request_type: formData.request_type,
+        book_title: formData.book_title,
+        book_description: formData.book_description,
+        author_bio: formData.author_bio,
+        portfolio_url: formData.portfolio_url || null,
+        experience: formData.experience || null,
+        motivation: formData.motivation || null,
         status: 'pending',
         created_at: new Date().toISOString()
       }
 
       const { error } = await supabase
-        .from('professor_applications')
+        .from('author_applications')
         .insert([applicationData])
 
       if (error) throw error
 
-      alert('교수 회원 등록 신청이 완료되었습니다!\n담당자가 확인 후 업무일 기준 24시간 이내에 처리됩니다.')
+      alert('저자 신청이 완료되었습니다!\n담당자가 확인 후 연락드리겠습니다.')
       
       // 폼 초기화
       setFormData({
         name: '',
-        institution: '',
-        institution_url: '',
-        position: '',
+        email: '',
         phone: '',
-        department: '',
-        lecture_topics: '',
-        interested_books: [],
-        request_type: []
+        book_title: '',
+        book_description: '',
+        author_bio: '',
+        portfolio_url: '',
+        experience: '',
+        motivation: ''
       })
 
     } catch (error: any) {
@@ -189,59 +91,20 @@ export default function ProfessorApplicationPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loading size="lg" text="페이지 로딩 중..." />
-      </div>
-    )
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <div className="mb-6">
-            <svg className="w-16 h-16 mx-auto text-primary-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l9-5-9-5-9 5 9 5z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-            </svg>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">교수 회원 등록</h2>
-            <p className="text-gray-600">
-              교수 회원 등록을 하려면 로그인이 필요합니다.
-            </p>
-          </div>
-          
-          <div className="space-y-4">
-            <Button 
-              onClick={handleGoogleLogin}
-              className="w-full"
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Google로 로그인
-            </Button>
-            
-            <div className="pt-4 border-t border-gray-200">
-              <Link href="/" className="text-primary-600 hover:text-primary-700 text-sm">
-                ← 메인 페이지로 돌아가기
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* 페이지 헤더 */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">저자 신청</h1>
+          <p className="text-xl text-gray-600">
+            골든래빗과 함께 IT 전문서를 출간하고 싶으신가요?
+          </p>
+        </div>
+
         {/* 원고 제출 안내 */}
-        <div className="bg-white rounded-lg shadow-sm p-8 mb-12">
+        <div className="bg-white rounded-lg shadow-sm p-8 mb-8">
           <h2 className="text-2xl font-bold mb-6 text-gray-900">원고기획서 제출</h2>
           <div className="prose prose-lg text-gray-700 mb-8">
             <p>
@@ -266,11 +129,158 @@ export default function ProfessorApplicationPage() {
           </div>
         </div>
 
+        {/* 저자 신청서 */}
+        <div className="bg-white rounded-lg shadow-sm p-8 mb-8">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900">저자 신청서</h2>
+          <p className="text-gray-600 mb-8">
+            아래 양식을 작성해주시면 담당자가 검토 후 연락드리겠습니다.
+          </p>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* 기본 정보 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  성명 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="홍길동"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  이메일 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="your.email@example.com"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  연락처 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="010-1234-5678"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  포트폴리오 URL
+                </label>
+                <input
+                  type="url"
+                  value={formData.portfolio_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, portfolio_url: e.target.value }))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="https://github.com/username"
+                />
+              </div>
+            </div>
+
+            {/* 도서 정보 */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                집필 희망 도서 제목 <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.book_title}
+                onChange={(e) => setFormData(prev => ({ ...prev, book_title: e.target.value }))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="예: React로 배우는 현대적 웹 개발"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                도서 개요 및 특징 <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={formData.book_description}
+                onChange={(e) => setFormData(prev => ({ ...prev, book_description: e.target.value }))}
+                rows={5}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="집필하고자 하는 도서의 주요 내용, 독자 대상, 차별화 포인트 등을 자세히 설명해주세요."
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                저자 소개 <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                value={formData.author_bio}
+                onChange={(e) => setFormData(prev => ({ ...prev, author_bio: e.target.value }))}
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="학력, 경력, 전문 분야, 주요 프로젝트 경험 등을 포함해 자기소개를 작성해주세요."
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                관련 경험 및 전문성
+              </label>
+              <textarea
+                value={formData.experience}
+                onChange={(e) => setFormData(prev => ({ ...prev, experience: e.target.value }))}
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="해당 주제와 관련된 실무 경험, 프로젝트, 교육 경험 등을 작성해주세요."
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                집필 동기 및 목표
+              </label>
+              <textarea
+                value={formData.motivation}
+                onChange={(e) => setFormData(prev => ({ ...prev, motivation: e.target.value }))}
+                rows={4}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                placeholder="이 책을 쓰고자 하는 이유와 독자들에게 전달하고자 하는 메시지를 작성해주세요."
+              />
+            </div>
+
+            <div className="pt-6">
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3 text-lg"
+              >
+                {submitting ? '제출 중...' : '저자 신청서 제출'}
+              </Button>
+            </div>
+          </form>
+        </div>
+
         {/* 연락처 정보 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {/* 이메일 & 페이스북 */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-900">Contact</h3>
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-bold mb-4 text-gray-900">문의사항</h3>
             <div className="space-y-3">
               <div className="flex items-center text-gray-700">
                 <svg className="w-5 h-5 mr-3 text-primary-500" fill="currentColor" viewBox="0 0 24 24">
@@ -292,41 +302,30 @@ export default function ProfessorApplicationPage() {
           </div>
 
           {/* 위치 정보 */}
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="text-lg font-bold mb-4 text-gray-900">Our Location</h3>
-            <p className="text-gray-700">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <h3 className="text-lg font-bold mb-4 text-gray-900">출판사 위치</h3>
+            <p className="text-gray-700 leading-relaxed">
               (우) 04051<br />
               서울 마포구 양화로 186<br />
-              LC타워 449호
+              LC타워 449호<br />
+              <span className="text-sm text-gray-500 mt-2 inline-block">
+                전화: 0505-398-0505
+              </span>
             </p>
           </div>
         </div>
 
-        {/* Connect us */}
-        <div className="bg-gray-50 rounded-lg p-6 mt-8">
-          <h3 className="text-lg font-bold mb-4 text-gray-900">Connect us</h3>
-          <div className="space-y-3 text-gray-700">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-              <span>0505-398-0505</span>
-            </div>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z" />
-              </svg>
-              <span>0505-537-0505</span>
-            </div>
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-3 text-gray-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
-              </svg>
-              <a href="mailto:master@goldenrabbit.co.kr" className="hover:text-primary-600 transition-colors">
-                master@goldenrabbit.co.kr
-              </a>
-            </div>
-          </div>
+        {/* 메인으로 돌아가기 */}
+        <div className="text-center mt-12">
+          <Link 
+            href="/"
+            className="inline-flex items-center px-6 py-3 text-primary-600 hover:text-primary-700 border border-primary-600 hover:border-primary-700 rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            메인 페이지로 돌아가기
+          </Link>
         </div>
       </div>
     </div>

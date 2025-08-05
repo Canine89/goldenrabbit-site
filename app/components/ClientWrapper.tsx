@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createSupabaseClient } from '../lib/supabase-client'
 import Header from './Header'
 import Footer from './Footer'
+import { CartProvider } from '../contexts/CartContext'
 import type { User } from '@supabase/supabase-js'
 
 interface ClientWrapperProps {
@@ -75,12 +76,14 @@ export default function ClientWrapper({
   }, [supabase, initialUser, initialProfile])
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header user={user} profile={profile} loading={loading} />
-      <main className="flex-1">
-        {children}
-      </main>
-      <Footer />
-    </div>
+    <CartProvider>
+      <div className="min-h-screen flex flex-col">
+        <Header user={user} profile={profile} loading={loading} />
+        <main className="flex-1">
+          {children}
+        </main>
+        <Footer />
+      </div>
+    </CartProvider>
   )
 }

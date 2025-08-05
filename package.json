@@ -6,27 +6,20 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "preview": "next start",
-    "dev:vite": "vite",
-    "build:vite": "vite build",
-    "preview:vite": "vite preview"
+    "preview": "next start"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.38.0",
+    "@tosspayments/tosspayments-sdk": "^2.3.5",
     "@types/dompurify": "^3.0.5",
-    "axios": "^1.11.0",
-    "cheerio": "^1.1.2",
     "dompurify": "^3.2.6",
-    "fs-extra": "^11.3.0",
     "google-auth-library": "^10.1.0",
     "googleapis": "^153.0.0",
-    "iconv-lite": "^0.6.3",
     "next": "^15.4.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^6.8.0",
     "rehype-sanitize": "^6.0.0",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
@@ -37,11 +30,9 @@
     "@types/node": "^24.0.15",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
-    "typescript": "^5.8.3",
-    "vite": "^5.0.8"
+    "typescript": "^5.8.3"
   }
 }

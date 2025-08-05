@@ -6,17 +6,7 @@ import { createSupabaseClient } from '../lib/supabase-client'
 import SmartImage from './SmartImage'
 import Card from './ui/Card'
 import Loading from './ui/Loading'
-
-interface Article {
-  id: string
-  title: string
-  content?: string
-  excerpt?: string
-  featured_image_url?: string
-  is_featured: boolean
-  is_published: boolean
-  created_at: string
-}
+import type { Article } from '../../lib/actions/types'
 
 export default function LatestArticles() {
   const [latestArticles, setLatestArticles] = useState<Article[]>([])

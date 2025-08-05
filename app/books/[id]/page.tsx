@@ -10,29 +10,7 @@ import { createSupabaseClient } from '../../lib/supabase-client'
 import SmartImage from '../../components/SmartImage'
 import Loading from '../../components/ui/Loading'
 import Button from '../../components/ui/Button'
-
-interface Book {
-  id: string
-  title: string
-  author: string
-  author_bio?: string
-  price: number
-  cover_image_url?: string
-  category: string
-  isbn?: string
-  page_count?: number
-  size?: string
-  publication_date?: string
-  table_of_contents?: string
-  description?: string
-  publisher_review?: string
-  testimonials?: string
-  errata_link?: string
-  error_report_link?: string
-  is_featured: boolean
-  is_active: boolean
-  created_at: string
-}
+import type { Book } from '../../../lib/actions/types'
 
 interface OnlineStore {
   yes24_url?: string

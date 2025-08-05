@@ -291,6 +291,7 @@ IT 기술 아티클 및 블로그 포스트
 - image_url (text): 상품 이미지 URL
 - category (text): 카테고리
 - is_active (boolean): 판매 활성화 상태
+- is_featured (boolean): 추천 상품 여부
 ```
 
 #### 5. orders (주문)
@@ -298,9 +299,12 @@ IT 기술 아티클 및 블로그 포스트
 ```sql
 - id (uuid, PK): 주문 고유 ID
 - user_id (uuid): 주문자 ID
+- order_number (text, unique): 주문번호 (예: ORD-20240115-ABC123)
 - total_amount (integer): 총 주문 금액
 - status (text): 주문 상태 (pending, confirmed, shipped, delivered, cancelled)
 - shipping_address (text): 배송 주소
+- shipping_postcode (text): 배송지 우편번호
+- shipping_note (text): 배송 메모
 - customer_name, customer_phone, customer_email: 고객 정보
 ```
 
@@ -391,3 +395,16 @@ IT 기술 아티클 및 블로그 포스트
 - orders ↔ order_items (주문 상품)
 - rabbit_store_products ↔ order_items (상품 정보)
 - community_posts ↔ community_comments (게시글-댓글)
+
+## 데이터베이스 변경 이력
+
+### 2025-01-24: orders 테이블 확장 (주문 시스템 개선)
+**마이그레이션**: `add_order_number_to_orders`
+
+**변경 내용**:
+- `order_number` 컬럼 추가 (TEXT, UNIQUE): 고유 주문번호 (예: ORD-20240115-ABC123)
+- `shipping_postcode` 컬럼 추가 (TEXT): 배송지 우편번호
+- `shipping_note` 컬럼 추가 (TEXT): 배송 메모
+- `idx_orders_order_number` 인덱스 추가: 주문번호 조회 성능 향상
+
+**목적**: 토끼상점 주문 시스템 완성을 위한 필수 필드 추가

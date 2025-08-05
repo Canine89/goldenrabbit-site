@@ -7,18 +7,7 @@ import SmartImage from '../components/SmartImage'
 import Card from '../components/ui/Card'
 import Loading from '../components/ui/Loading'
 import Button from '../components/ui/Button'
-
-interface Book {
-  id: string
-  title: string
-  author: string
-  price: number
-  cover_image_url?: string
-  category: string
-  is_featured: boolean
-  is_active: boolean
-  created_at: string
-}
+import type { Book } from '../../lib/actions/types'
 
 const categories = [
   { id: 'all', name: '전체', slug: 'all' },
@@ -50,6 +39,7 @@ export default function BooksPage() {
         .from('books')
         .select('*')
         .eq('is_active', true)
+        .order('is_featured', { ascending: false })
         .order('created_at', { ascending: false })
 
       if (selectedCategory !== 'all') {

@@ -9,20 +9,7 @@ import rehypeSanitize from 'rehype-sanitize'
 import { createSupabaseClient } from '../../lib/supabase-client'
 import SmartImage from '../../components/SmartImage'
 import Loading from '../../components/ui/Loading'
-
-interface Article {
-  id: string
-  title: string
-  content?: string
-  excerpt?: string
-  featured_image_url?: string
-  category: string
-  tags?: string[]
-  is_featured: boolean
-  is_published: boolean
-  created_at: string
-  updated_at: string
-}
+import type { Article } from '../../../lib/actions/types'
 
 export default function ArticleDetailPage() {
   const params = useParams()

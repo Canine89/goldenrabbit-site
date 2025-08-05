@@ -7,19 +7,7 @@ import SmartImage from '../components/SmartImage'
 import Card from '../components/ui/Card'
 import Loading from '../components/ui/Loading'
 import Button from '../components/ui/Button'
-
-interface Article {
-  id: string
-  title: string
-  content?: string
-  excerpt?: string
-  featured_image_url?: string
-  category: string
-  is_featured: boolean
-  is_published: boolean
-  created_at: string
-  updated_at: string
-}
+import type { Article } from '../../lib/actions/types'
 
 const categories = [
   { id: 'all', name: '전체' },
