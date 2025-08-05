@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkBreaks from 'remark-breaks'
 import rehypeSanitize from 'rehype-sanitize'
 import { createSupabaseClient } from '../../lib/supabase-client'
 import SmartImage from '../../components/SmartImage'
@@ -95,136 +96,254 @@ export default function BookDetailPage() {
       </React.Fragment>
     ))
   }
-
-  // 마크다운 텍스트에서 줄바꿈을 처리하는 함수
-  const preprocessMarkdownForLineBreaks = (content: string) => {
-    // 1. 먼저 2개 이상의 연속 줄바꿈을 1개로 정규화
-    // 2. 그 다음 모든 줄바꿈을 마크다운 hard break로 변환
-    return content
-      .replace(/\n{2,}/g, '\n')  // 2개 이상 연속 줄바꿈을 1개로
-      .replace(/\n/g, '  \n')    // 모든 줄바꿈을 hard break로
+  // 마크다운 콘텐츠가 유효한지 확인하는 함수
+  const isValidMarkdown = (content: string) => {
+    if (!content) return false
+    
+    // 마크다운 문법 요소들이 있는지 확인
+    const markdownPatterns = [
+      /^#{1,6}\s+/m,     // 헤딩
+      /\*\*.*?\*\*/,     // 굵은 글씨
+      /\*.*?\*/,         // 기울임
+      /^[-*+]\s+/m,      // 리스트
+      /^\d+\.\s+/m,      // 번호 리스트
+      /```[\s\S]*?```/,  // 코드 블록
+      /`[^`]+`/,         // 인라인 코드
+      /^>/m,             // 인용구
+      /\[.*?\]\(.*?\)/,  // 링크
+      /!\[.*?\]\(.*?\)/, // 이미지
+      /\|.*?\|/,         // 테이블
+    ]
+    
+    return markdownPatterns.some(pattern => pattern.test(content))
   }
 
-  // 마크다운과 일반 텍스트를 모두 처리하는 함수
-  const renderContent = (content: string, isMarkdown: boolean = true) => {
+  // 마크다운 전처리 함수 - 이미지를 단락에서 분리
+  const preprocessMarkdown = (content: string) => {
+    if (!content) return content
+    
+    // 이미지가 단락 내에 있을 경우 별도 줄로 분리
+    return content
+      .replace(/(.+)\s*!\[([^\]]*)\]\(([^)]+)\)\s*(.*)/, (match, before, alt, src, after) => {
+        const trimmedBefore = before?.trim()
+        const trimmedAfter = after?.trim()
+        
+        let result = ''
+        if (trimmedBefore) result += trimmedBefore + '\n\n'
+        result += `![${alt}](${src})`
+        if (trimmedAfter) result += '\n\n' + trimmedAfter
+        
+        return result
+      })
+  }
+
+  const renderContent = (content: string) => {
     if (!content) return null
     
-    if (isMarkdown) {
-      // 마크다운 전처리: 단일 줄바꿈을 hard break로 변환
-      const processedContent = preprocessMarkdownForLineBreaks(content)
+    const shouldRenderMarkdown = isValidMarkdown(content)
+    
+    if (shouldRenderMarkdown) {
+      const processedContent = preprocessMarkdown(content)
       
       return (
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeSanitize]}
-          components={{
-            p: ({ children }) => <p className="mb-2 leading-normal text-gray-700">{children}</p>,
-            h1: ({ children }) => (
-              <h1 className="text-3xl font-bold mb-4 mt-6 text-gray-900 border-b-2 border-primary-200 pb-2">
-                {children}
-              </h1>
-            ),
-            h2: ({ children }) => (
-              <h2 className="text-2xl font-bold mb-3 mt-5 text-gray-900 border-b border-gray-200 pb-1">
-                {children}
-              </h2>
-            ),
-            h3: ({ children }) => (
-              <h3 className="text-xl font-semibold mb-2 mt-4 text-gray-800">
-                {children}
-              </h3>
-            ),
-            h4: ({ children }) => (
-              <h4 className="text-lg font-semibold mb-2 mt-3 text-gray-800">
-                {children}
-              </h4>
-            ),
-            ul: ({ children }) => (
-              <ul className="list-disc ml-8 mb-4 space-y-1 pl-4">
-                {children}
-              </ul>
-            ),
-            ol: ({ children }) => (
-              <ol className="list-decimal ml-8 mb-4 space-y-1 pl-4">
-                {children}
-              </ol>
-            ),
-            li: ({ children }) => (
-              <li className="leading-normal text-gray-700 ml-4">
-                {children}
-              </li>
-            ),
-            blockquote: ({ children }) => (
-              <blockquote className="border-l-4 border-yellow-400 bg-yellow-50 pl-6 pr-4 py-3 italic my-4 rounded-r-lg">
-                <div className="text-yellow-800">
+        <div className="markdown-content">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkBreaks]}
+            rehypePlugins={[rehypeSanitize]}
+            components={{
+              // 문단
+              p: ({ children }) => (
+                <p className="mb-4 leading-relaxed text-gray-700 text-base">
                   {children}
+                </p>
+              ),
+              
+              // 헤딩들
+              h1: ({ children }) => (
+                <h1 className="text-3xl font-bold mb-6 mt-8 text-gray-900 border-b-2 border-primary-500 pb-3">
+                  {children}
+                </h1>
+              ),
+              h2: ({ children }) => (
+                <h2 className="text-2xl font-bold mb-4 mt-6 text-gray-800">
+                  <span className="text-primary-500 mr-2">#</span>
+                  {children}
+                </h2>
+              ),
+              h3: ({ children }) => (
+                <h3 className="text-xl font-semibold mb-3 mt-5 text-gray-800 border-l-4 border-primary-500 pl-3">
+                  {children}
+                </h3>
+              ),
+              h4: ({ children }) => (
+                <h4 className="text-lg font-semibold mb-2 mt-4 text-gray-700">
+                  {children}
+                </h4>
+              ),
+              h5: ({ children }) => (
+                <h5 className="text-base font-semibold mb-2 mt-3 text-gray-700">
+                  {children}
+                </h5>
+              ),
+              h6: ({ children }) => (
+                <h6 className="text-sm font-semibold mb-2 mt-3 text-gray-600">
+                  {children}
+                </h6>
+              ),
+
+              // 리스트
+              ul: ({ children }) => (
+                <ul className="mb-4 space-y-1 ml-6 list-disc marker:text-primary-500">
+                  {children}
+                </ul>
+              ),
+              ol: ({ children }) => (
+                <ol className="mb-4 space-y-1 ml-6 list-decimal marker:text-primary-500">
+                  {children}
+                </ol>
+              ),
+              li: ({ children }) => (
+                <li className="leading-relaxed text-gray-700 text-base">
+                  {children}
+                </li>
+              ),
+
+              // 인용구
+              blockquote: ({ children }) => (
+                <blockquote className="relative my-6 p-4 bg-gradient-to-r from-primary-50 to-transparent border-l-4 border-primary-500 rounded-r-lg">
+                  <div className="text-gray-700 italic text-base leading-relaxed">
+                    {children}
+                  </div>
+                </blockquote>
+              ),
+
+              // 코드
+              code: ({ children, className, ...props }) => {
+                const isInline = !className
+                if (isInline) {
+                  return (
+                    <code className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono border">
+                      {children}
+                    </code>
+                  )
+                }
+                return (
+                  <code className="block bg-gray-900 text-gray-100 p-4 rounded-lg text-sm font-mono overflow-auto leading-relaxed" {...props}>
+                    {children}
+                  </code>
+                )
+              },
+              pre: ({ children }) => (
+                <div className="my-4">
+                  <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg text-sm font-mono overflow-auto leading-relaxed">
+                    {children}
+                  </pre>
                 </div>
-              </blockquote>
-            ),
-            code: ({ children }) => (
-              <code className="bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm font-mono border">
-                {children}
-              </code>
-            ),
-            pre: ({ children }) => (
-              <pre className="bg-gray-900 text-gray-100 p-6 rounded-lg overflow-x-auto mb-4 border shadow-lg">
-                <code className="text-sm font-mono leading-normal">
+              ),
+
+              // 강조
+              strong: ({ children }) => (
+                <strong className="font-bold text-gray-900">{children}</strong>
+              ),
+              em: ({ children }) => (
+                <em className="italic text-gray-700">{children}</em>
+              ),
+
+              // 테이블
+              table: ({ children }) => (
+                <div className="overflow-x-auto my-6">
+                  <table className="min-w-full border border-gray-300 rounded-lg overflow-hidden">
+                    {children}
+                  </table>
+                </div>
+              ),
+              thead: ({ children }) => (
+                <thead className="bg-gray-50">
                   {children}
-                </code>
-              </pre>
-            ),
-            strong: ({ children }) => (
-              <strong className="font-bold text-gray-900">
-                {children}
-              </strong>
-            ),
-            em: ({ children }) => (
-              <em className="italic text-gray-700">
-                {children}
-              </em>
-            ),
-            br: () => <br className="block" />,
-            table: ({ children }) => (
-              <div className="overflow-x-auto my-4">
-                <table className="min-w-full border-collapse border border-gray-300 bg-white rounded-lg shadow-sm">
+                </thead>
+              ),
+              tbody: ({ children }) => (
+                <tbody className="divide-y divide-gray-200">
                   {children}
-                </table>
-              </div>
-            ),
-            thead: ({ children }) => (
-              <thead className="bg-gray-50">
-                {children}
-              </thead>
-            ),
-            tbody: ({ children }) => (
-              <tbody className="divide-y divide-gray-200">
-                {children}
-              </tbody>
-            ),
-            tr: ({ children }) => (
-              <tr className="hover:bg-gray-50 transition-colors">
-                {children}
-              </tr>
-            ),
-            td: ({ children }) => (
-              <td className="border border-gray-300 px-4 py-2 text-sm text-gray-700">
-                {children}
-              </td>
-            ),
-            th: ({ children }) => (
-              <th className="border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-900 bg-gray-100">
-                {children}
-              </th>
-            ),
-          }}
-        >
-          {processedContent}
-        </ReactMarkdown>
+                </tbody>
+              ),
+              tr: ({ children }) => (
+                <tr className="hover:bg-gray-50 transition-colors">
+                  {children}
+                </tr>
+              ),
+              td: ({ children }) => (
+                <td className="px-4 py-2 text-sm leading-relaxed text-gray-700">
+                  {children}
+                </td>
+              ),
+              th: ({ children }) => (
+                <th className="px-4 py-2 text-sm font-semibold text-left text-gray-900 bg-gray-100">
+                  {children}
+                </th>
+              ),
+
+              // 링크
+              a: ({ children, href }) => (
+                <a 
+                  href={href} 
+                  className="text-primary-600 font-medium hover:text-primary-700 underline hover:no-underline transition-all"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {children}
+                </a>
+              ),
+
+              // 구분선
+              hr: () => (
+                <hr className="my-8 border-t-2 border-gray-200" />
+              ),
+
+              // 이미지
+              img: ({ src, alt }) => {
+                if (!src) return null
+                
+                return (
+                  <span className="block my-6 text-center">
+                    <img
+                      src={src}
+                      alt={alt || ''}
+                      className="max-w-full h-auto mx-auto rounded-lg shadow-sm"
+                      loading="lazy"
+                      crossOrigin="anonymous"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        // 이미지 로드 실패 시 플레이스홀더로 교체
+                        const target = e.target as HTMLImageElement
+                        target.style.display = 'none'
+                        const placeholder = document.createElement('span')
+                        placeholder.className = 'inline-flex items-center justify-center bg-gray-100 text-gray-400 text-sm p-6 rounded-lg'
+                        placeholder.innerHTML = `
+                          <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          이미지를 불러올 수 없습니다
+                        `
+                        target.parentNode?.insertBefore(placeholder, target)
+                      }}
+                    />
+                    {alt && (
+                      <span className="block text-sm text-gray-500 mt-2 italic">{alt}</span>
+                    )}
+                  </span>
+                )
+              },
+            }}
+          >
+            {processedContent}
+          </ReactMarkdown>
+        </div>
       )
     } else {
       // 일반 텍스트의 경우 줄바꿈 처리
       return (
-        <div className="leading-relaxed">
+        <div className="leading-relaxed text-gray-700 text-base">
           {formatTextWithBreaks(content)}
         </div>
       )

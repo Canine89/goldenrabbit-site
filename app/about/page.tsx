@@ -60,8 +60,8 @@ export default function AboutPage() {
                 icon: '📚',
                 color: 'bg-purple-50 border-purple-200'
               }
-            ].map((series, index) => (
-              <div key={index} className={`${series.color} border rounded-xl p-8 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1`}>
+            ].map((series) => (
+              <div key={series.title} className={`${series.color} border rounded-xl p-8 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1`}>
                 <div className="text-5xl mb-4">{series.icon}</div>
                 <h3 className="text-xl font-semibold text-gray-900 mb-3">{series.title}</h3>
                 <p className="text-gray-700 leading-relaxed">{series.description}</p>
@@ -102,8 +102,8 @@ export default function AboutPage() {
                 { year: '2022', event: '학습만화 시리즈 런칭' },
                 { year: '2023', event: '토끼상점 오픈, 온라인 플랫폼 구축' },
                 { year: '2024', event: '교수회원 제도 도입, 저자 지원 프로그램 확대', highlight: true },
-              ].map((item, index) => (
-                <div key={index} className="flex items-start group hover:bg-gray-50 p-4 rounded-lg transition-colors duration-200">
+              ].map((item) => (
+                <div key={item.year} className="flex items-start group hover:bg-gray-50 p-4 rounded-lg transition-colors duration-200">
                   <div className={`flex-shrink-0 w-24 text-xl font-bold ${item.highlight ? 'text-primary-600' : 'text-gray-700'}`}>
                     {item.year}
                   </div>

@@ -171,6 +171,13 @@ export default function AdminDashboard() {
       href: '/admin/professor-resources',
       icon: '🎓',
       color: 'bg-teal-500'
+    },
+    {
+      title: '아티클 마이그레이션',
+      description: 'URL에서 아티클 가져오기',
+      href: '/admin/articles?mode=migration',
+      icon: '🔄',
+      color: 'bg-cyan-500'
     }
   ]
 

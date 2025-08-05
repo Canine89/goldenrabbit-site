@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createSupabaseClient } from '../../lib/supabase-client'
 import SmartImage from '../../components/SmartImage'
@@ -15,6 +15,10 @@ import {
   toggleArticleStatus, 
   getAdminArticles 
 } from '../../../lib/actions/article-actions'
+import { 
+  extractArticleFromUrl, 
+  checkDuplicateArticle 
+} from '../../../lib/actions/migration-actions'
 
 interface Article {
   id: string
@@ -42,10 +46,13 @@ interface FormData {
   tags: string
   is_featured: boolean
   is_published: boolean
+  sourceUrl?: string
+  isUrlMode?: boolean
 }
 
 export default function ArticleManagementPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [articles, setArticles] = useState<Article[]>([])
   const [filteredArticles, setFilteredArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
@@ -57,6 +64,7 @@ export default function ArticleManagementPage() {
   const [selectedStatus, setSelectedStatus] = useState('전체')
   const [isPending, startTransition] = useTransition()
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isExtracting, setIsExtracting] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     title: '',
     excerpt: '',
@@ -66,6 +74,8 @@ export default function ArticleManagementPage() {
     tags: '',
     is_featured: false,
     is_published: true,
+    sourceUrl: '',
+    isUrlMode: false,
   })
 
   const supabase = createSupabaseClient()
@@ -77,6 +87,15 @@ export default function ArticleManagementPage() {
   useEffect(() => {
     checkAdminAuth()
   }, [])
+
+  // URL 파라미터 확인하여 마이그레이션 모드 설정
+  useEffect(() => {
+    const mode = searchParams.get('mode')
+    if (mode === 'migration') {
+      setShowAddForm(true)
+      setFormData(prev => ({ ...prev, isUrlMode: true }))
+    }
+  }, [searchParams])
 
   // 아티클 목록 조회
   useEffect(() => {
@@ -162,9 +181,73 @@ export default function ArticleManagementPage() {
       tags: '',
       is_featured: false,
       is_published: true,
+      sourceUrl: '',
+      isUrlMode: false,
     })
     setEditingArticle(null)
     setShowAddForm(false)
+    setSubmitError(null)
+  }
+
+  // URL 모드 시작 함수
+  const startAddMode = (isUrlMode: boolean) => {
+    resetForm()
+    setFormData(prev => ({ ...prev, isUrlMode }))
+    setShowAddForm(true)
+  }
+
+  // URL에서 콘텐츠 추출 함수
+  const handleImportFromUrl = async () => {
+    if (!formData.sourceUrl) {
+      alert('URL을 입력해주세요')
+      return
+    }
+
+    setIsExtracting(true)
+    setSubmitError(null)
+
+    try {
+      // URL에서 아티클 추출
+      const result = await extractArticleFromUrl(formData.sourceUrl)
+      
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+
+      const extractedData = result.data!
+      
+      // 중복 체크
+      const duplicateCheck = await checkDuplicateArticle(extractedData.title)
+      
+      let confirmImport = true
+      if (duplicateCheck.success && duplicateCheck.data) {
+        confirmImport = confirm(
+          `"${extractedData.title}"과 유사한 제목의 아티클이 이미 존재합니다.\n\n그래도 가져오시겠습니까?`
+        )
+      }
+
+      if (confirmImport) {
+        // 추출된 데이터로 폼 자동 입력
+        setFormData(prev => ({
+          ...prev,
+          title: extractedData.title,
+          content: extractedData.content,
+          excerpt: extractedData.excerpt,
+          featured_image_url: extractedData.featured_image_url || '',
+          category: extractedData.category,
+          tags: extractedData.tags.join(', '),
+          is_featured: false,
+          is_published: true,
+        }))
+
+        alert('콘텐츠를 성공적으로 가져왔습니다. 내용을 확인하고 수정 후 등록해주세요.')
+      }
+
+    } catch (error: any) {
+      setSubmitError(`콘텐츠 가져오기 실패: ${error.message}`)
+    } finally {
+      setIsExtracting(false)
+    }
   }
 
   const handleEdit = (article: Article) => {
@@ -319,15 +402,29 @@ export default function ArticleManagementPage() {
         {/* 헤더 */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">아티클 관리</h1>
-            <p className="text-gray-600 mt-1">총 {articles.length}개의 아티클 등록됨</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {showAddForm 
+                ? (formData.isUrlMode ? 'URL에서 아티클 가져오기' : (editingArticle ? '아티클 수정' : '새 아티클 추가'))
+                : '아티클 관리'
+              }
+            </h1>
+            <p className="text-gray-600 mt-1">
+              {showAddForm 
+                ? (formData.isUrlMode ? '기존 사이트의 아티클을 가져와서 등록합니다' : '새로운 아티클을 작성합니다')
+                : `총 ${articles.length}개의 아티클 등록됨`
+              }
+            </p>
           </div>
-          <Button
-            onClick={() => setShowAddForm(true)}
-            className="px-6 py-3"
-          >
-            + 새 아티클 추가
-          </Button>
+          {!showAddForm && (
+            <div className="flex gap-3">
+              <Button onClick={() => startAddMode(false)} className="px-6 py-3">
+                + 새 아티클 추가
+              </Button>
+              <Button onClick={() => startAddMode(true)} variant="outline" className="px-6 py-3">
+                🔄 URL에서 가져오기
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* 필터 바 */}
@@ -377,6 +474,35 @@ export default function ArticleManagementPage() {
                 </button>
               </div>
 
+              {/* URL 입력 섹션 (URL 모드일 때만 표시) */}
+              {formData.isUrlMode && (
+                <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    🌐 골든래빗 사이트 아티클 URL
+                  </label>
+                  <div className="flex gap-3">
+                    <input
+                      type="url"
+                      value={formData.sourceUrl}
+                      onChange={(e) => setFormData({...formData, sourceUrl: e.target.value})}
+                      placeholder="https://goldenrabbit.co.kr/..."
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <Button 
+                      type="button"
+                      onClick={handleImportFromUrl} 
+                      disabled={!formData.sourceUrl || isExtracting}
+                      className="px-4 py-2 whitespace-nowrap"
+                    >
+                      {isExtracting ? '가져오는 중...' : '가져오기'}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 URL을 입력하고 "가져오기" 버튼을 클릭하면 아래 폼에 자동으로 내용이 입력됩니다
+                  </p>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* 기본 정보 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -389,6 +515,7 @@ export default function ArticleManagementPage() {
                       value={formData.title}
                       onChange={(e) => setFormData({...formData, title: e.target.value})}
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      placeholder={formData.isUrlMode ? "URL에서 자동으로 입력됩니다" : "아티클 제목을 입력하세요"}
                       required
                     />
                   </div>
