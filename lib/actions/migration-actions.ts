@@ -24,38 +24,104 @@ export interface ExtractedArticle {
 // 골든래빗 사이트에서 아티클 콘텐츠를 추출하는 함수
 export async function extractArticleFromUrl(url: string): Promise<ActionResult<ExtractedArticle>> {
   try {
-    // 관리자 권한 확인
-    const isAdmin = await checkAdminPermission()
-    if (!isAdmin) {
-      return createErrorResponse('관리자 권한이 필요합니다')
+    // 관리자 권한 확인 (에러 핸들링 강화)
+    try {
+      const isAdmin = await checkAdminPermission()
+      if (!isAdmin) {
+        return createErrorResponse('관리자 권한이 필요합니다')
+      }
+    } catch (authError) {
+      logError('extractArticleFromUrl - auth check', authError)
+      return createErrorResponse('권한 확인 중 오류가 발생했습니다. 다시 로그인해주세요.')
     }
 
-    // URL 유효성 검사
-    if (!url || !url.includes('goldenrabbit.co.kr')) {
-      return createErrorResponse('유효한 골든래빗 사이트 URL을 입력해주세요')
+    // URL 유효성 검사 강화
+    if (!url || typeof url !== 'string') {
+      return createErrorResponse('유효한 URL을 입력해주세요')
     }
 
-    // 간단한 웹 스크래핑으로 콘텐츠 추출 (실제로는 WebFetch 도구를 사용해야 함)
-    const response = await fetch(url)
+    if (!url.includes('goldenrabbit.co.kr')) {
+      return createErrorResponse('골든래빗 사이트(goldenrabbit.co.kr)의 URL만 지원됩니다')
+    }
+
+    // URL 형식 검증
+    try {
+      new URL(url)
+    } catch {
+      return createErrorResponse('올바른 URL 형식이 아닙니다')
+    }
+
+    // 웹 스크래핑으로 콘텐츠 추출 (타임아웃 및 에러 핸들링 강화)
+    let response: Response
+    try {
+      response = await fetch(url, {
+        timeout: 10000, // 10초 타임아웃
+        headers: {
+          'User-Agent': 'GoldenRabbit Site Migration Tool/1.0'
+        }
+      })
+    } catch (fetchError: any) {
+      if (fetchError.name === 'TimeoutError') {
+        return createErrorResponse('요청 시간 초과: 페이지 응답이 너무 늦습니다')
+      }
+      throw new Error(`페이지 요청 실패: ${fetchError.message}`)
+    }
     
     if (!response.ok) {
+      if (response.status === 404) {
+        return createErrorResponse('페이지를 찾을 수 없습니다 (404)')
+      } else if (response.status === 403) {
+        return createErrorResponse('페이지 접근이 거부되었습니다 (403)')
+      } else if (response.status >= 500) {
+        return createErrorResponse('서버 오류가 발생했습니다 (5xx)')
+      }
       throw new Error(`HTTP ${response.status}: ${response.statusText}`)
     }
 
-    const html = await response.text()
+    let html: string
+    try {
+      html = await response.text()
+      
+      if (!html || html.trim().length === 0) {
+        return createErrorResponse('페이지 내용이 비어있습니다')
+      }
+    } catch (textError: any) {
+      throw new Error(`페이지 내용 읽기 실패: ${textError.message}`)
+    }
     
-    // 기본적인 HTML 파싱으로 콘텐츠 추출
-    const extractedData = parseHtmlContent(html, url)
+    // HTML 파싱으로 콘텐츠 추출 (에러 핸들링 강화)
+    let extractedData: any
+    try {
+      extractedData = parseHtmlContent(html, url)
+    } catch (parseError: any) {
+      logError('extractArticleFromUrl - HTML parsing', parseError)
+      return createErrorResponse(`페이지 분석 중 오류가 발생했습니다: ${parseError.message}`)
+    }
+    
+    // 추출된 데이터 유효성 검사
+    if (!extractedData || typeof extractedData !== 'object') {
+      return createErrorResponse('페이지에서 유효한 콘텐츠를 찾을 수 없습니다')
+    }
+
+    if (!extractedData.title || extractedData.title.trim().length === 0) {
+      return createErrorResponse('페이지에서 제목을 찾을 수 없습니다')
+    }
+
+    if (!extractedData.content || extractedData.content.trim().length < 50) {
+      return createErrorResponse('페이지 내용이 너무 짧거나 비어있습니다')
+    }
     
     // 응답 데이터 검증 및 정리
     const cleanedData: ExtractedArticle = {
-      title: extractedData.title || '제목 없음',
-      content: extractedData.content || '',
-      excerpt: extractedData.excerpt || extractedData.content?.substring(0, 200) + '...' || '',
+      title: extractedData.title.trim() || '제목 없음',
+      content: extractedData.content?.trim() || '',
+      excerpt: extractedData.excerpt?.trim() || 
+               (extractedData.content?.substring(0, 200).trim() + '...') || 
+               '내용을 확인할 수 없습니다.',
       featured_image_url: extractedData.featured_image_url || '',
       category: validateCategory(extractedData.category) || 'tech',
       tags: Array.isArray(extractedData.tags) ? extractedData.tags : [],
-      author: extractedData.author || '골든래빗',
+      author: extractedData.author?.trim() || '골든래빗',
       publish_date: extractedData.publish_date
     }
 
@@ -270,76 +336,200 @@ function validateCategory(category: string): string {
 // 중복 아티클 체크
 export async function checkDuplicateArticle(title: string): Promise<ActionResult<boolean>> {
   try {
-    const isAdmin = await checkAdminPermission()
-    if (!isAdmin) {
-      return createErrorResponse('관리자 권한이 필요합니다')
+    // 관리자 권한 확인 (에러 핸들링 강화)
+    try {
+      const isAdmin = await checkAdminPermission()
+      if (!isAdmin) {
+        return createErrorResponse('관리자 권한이 필요합니다')
+      }
+    } catch (authError) {
+      logError('checkDuplicateArticle - auth check', authError)
+      return createErrorResponse('권한 확인 중 오류가 발생했습니다. 다시 로그인해주세요.')
     }
 
-    const supabase = await createServerSupabaseClient()
+    // 제목 유효성 검사
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return createErrorResponse('유효한 제목을 제공해주세요')
+    }
+
+    const trimmedTitle = title.trim()
+    if (trimmedTitle.length < 2) {
+      return createErrorResponse('제목이 너무 짧습니다 (최소 2글자)')
+    }
+
+    // Supabase 클라이언트 생성 및 에러 핸들링
+    let supabase: any
+    try {
+      supabase = await createServerSupabaseClient()
+    } catch (dbError) {
+      logError('checkDuplicateArticle - database connection', dbError)
+      return createErrorResponse('데이터베이스 연결에 실패했습니다')
+    }
     
+    // 중복 검사 쿼리 실행
     const { data, error } = await supabase
       .from('articles')
       .select('id, title')
-      .ilike('title', `%${title}%`)
-      .limit(1)
+      .ilike('title', `%${trimmedTitle}%`)
+      .limit(5) // 최대 5개까지 검사하여 성능 개선
 
     if (error) {
-      logError('checkDuplicateArticle', error)
-      return createErrorResponse('중복 확인 중 오류가 발생했습니다')
+      logError('checkDuplicateArticle - database query', error)
+      return createErrorResponse('데이터베이스 조회 중 오류가 발생했습니다')
     }
 
+    // 결과 분석
     const isDuplicate = data && data.length > 0
-    return createSuccessResponse(isDuplicate, isDuplicate ? '유사한 제목의 아티클이 존재합니다' : '중복되지 않습니다')
+    const message = isDuplicate 
+      ? `유사한 제목의 아티클 ${data.length}개가 존재합니다` 
+      : '중복되지 않습니다'
+      
+    return createSuccessResponse(isDuplicate, message)
 
   } catch (error: any) {
     logError('checkDuplicateArticle', error)
-    return createErrorResponse(`중복 확인 중 오류가 발생했습니다: ${error.message}`)
+    return createErrorResponse(`중복 확인 중 예상치 못한 오류가 발생했습니다: ${error.message}`)
   }
 }
 
 // 배치 마이그레이션 (여러 URL 처리)
 export async function migrateBatchArticles(urls: string[]): Promise<ActionResult<any>> {
   try {
-    const isAdmin = await checkAdminPermission()
-    if (!isAdmin) {
-      return createErrorResponse('관리자 권한이 필요합니다')
+    // 관리자 권한 확인 (에러 핸들링 강화)
+    try {
+      const isAdmin = await checkAdminPermission()
+      if (!isAdmin) {
+        return createErrorResponse('관리자 권한이 필요합니다')
+      }
+    } catch (authError) {
+      logError('migrateBatchArticles - auth check', authError)
+      return createErrorResponse('권한 확인 중 오류가 발생했습니다. 다시 로그인해주세요.')
     }
 
+    // URL 배열 유효성 검사
+    if (!urls || !Array.isArray(urls)) {
+      return createErrorResponse('유효한 URL 배열을 제공해주세요')
+    }
+
+    if (urls.length === 0) {
+      return createErrorResponse('처리할 URL이 없습니다')
+    }
+
+    // URL 개수 제한 (성능 및 타임아웃 방지)
+    if (urls.length > 10) {
+      return createErrorResponse('한 번에 처리할 수 있는 URL은 최대 10개입니다')
+    }
+
+    // URL 형식 검증
+    const invalidUrls = urls.filter((url, index) => {
+      if (!url || typeof url !== 'string' || url.trim().length === 0) {
+        return true
+      }
+      try {
+        new URL(url.trim())
+        return false
+      } catch {
+        return true
+      }
+    })
+
+    if (invalidUrls.length > 0) {
+      return createErrorResponse(`올바르지 않은 URL 형식이 포함되어 있습니다 (${invalidUrls.length}개)`)
+    }
+
+    // 골든래빗 사이트 URL 검증
+    const nonGoldenRabbitUrls = urls.filter(url => !url.includes('goldenrabbit.co.kr'))
+    if (nonGoldenRabbitUrls.length > 0) {
+      return createErrorResponse(`골든래빗 사이트가 아닌 URL이 포함되어 있습니다 (${nonGoldenRabbitUrls.length}개)`)
+    }
+
+    // 중복 URL 제거
+    const uniqueUrls = Array.from(new Set(urls.map(url => url.trim())))
+    if (uniqueUrls.length !== urls.length) {
+      logError('migrateBatchArticles - duplicate URLs', `${urls.length - uniqueUrls.length}개의 중복 URL 제거됨`)
+    }
+
+    // 결과 추적 객체
     const results = {
       success: [] as Array<{ url: string; data: any }>,
       failed: [] as Array<{ url: string; error: string }>,
       duplicates: [] as Array<{ url: string; title: string }>
     }
 
-    for (const url of urls) {
+    // 순차 처리 (동시성 제어로 서버 과부하 방지)
+    for (let i = 0; i < uniqueUrls.length; i++) {
+      const url = uniqueUrls[i]
+      
       try {
-        // 콘텐츠 추출
+        // 진행률 로깅 (5개 이상일 때만)
+        if (uniqueUrls.length >= 5) {
+          console.log(`배치 마이그레이션 진행: ${i + 1}/${uniqueUrls.length} - ${url}`)
+        }
+
+        // 콘텐츠 추출 (이미 강화된 에러 핸들링 포함)
         const extractResult = await extractArticleFromUrl(url)
         if (!extractResult.success) {
           results.failed.push({ url, error: extractResult.error })
           continue
         }
 
-        // 중복 체크
-        const duplicateCheck = await checkDuplicateArticle(extractResult.data!.title)
-        if (duplicateCheck.success && duplicateCheck.data) {
-          results.duplicates.push({ url, title: extractResult.data!.title })
+        // 추출된 데이터 검증
+        if (!extractResult.data || !extractResult.data.title) {
+          results.failed.push({ url, error: '추출된 데이터가 유효하지 않습니다' })
+          continue
+        }
+
+        // 중복 체크 (이미 강화된 에러 핸들링 포함)
+        const duplicateCheck = await checkDuplicateArticle(extractResult.data.title)
+        if (!duplicateCheck.success) {
+          // 중복 체크 실패는 경고로만 처리하고 계속 진행
+          logError('migrateBatchArticles - duplicate check failed', `URL: ${url}, Error: ${duplicateCheck.error}`)
+        } else if (duplicateCheck.data) {
+          results.duplicates.push({ url, title: extractResult.data.title })
           continue
         }
 
         // 성공 목록에 추가 (실제 등록은 클라이언트에서 수행)
         results.success.push({ url, data: extractResult.data })
 
+        // 처리 간 짧은 지연 (서버 과부하 방지)
+        if (i < uniqueUrls.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+        }
+
       } catch (error: any) {
-        results.failed.push({ url, error: error.message })
+        logError('migrateBatchArticles - individual URL processing', error)
+        results.failed.push({ 
+          url, 
+          error: `처리 중 예상치 못한 오류가 발생했습니다: ${error.message}` 
+        })
       }
     }
 
-    const message = `처리 완료 - 성공: ${results.success.length}, 실패: ${results.failed.length}, 중복: ${results.duplicates.length}`
+    // 결과 검증
+    const totalProcessed = results.success.length + results.failed.length + results.duplicates.length
+    if (totalProcessed === 0) {
+      return createErrorResponse('처리된 URL이 없습니다. 입력 데이터를 확인해주세요.')
+    }
+
+    // 성공률 계산
+    const successRate = Math.round((results.success.length / totalProcessed) * 100)
+    
+    const message = `배치 마이그레이션 완료 - 성공: ${results.success.length}개, 실패: ${results.failed.length}개, 중복: ${results.duplicates.length}개 (성공률: ${successRate}%)`
+    
+    // 로그 출력 (디버깅용)
+    console.log('배치 마이그레이션 결과:', {
+      총_URL수: uniqueUrls.length,
+      성공: results.success.length,
+      실패: results.failed.length,
+      중복: results.duplicates.length,
+      성공률: `${successRate}%`
+    })
+
     return createSuccessResponse(results, message)
 
   } catch (error: any) {
     logError('migrateBatchArticles', error)
-    return createErrorResponse(`배치 마이그레이션 중 오류가 발생했습니다: ${error.message}`)
+    return createErrorResponse(`배치 마이그레이션 중 시스템 오류가 발생했습니다: ${error.message}`)
   }
 }
