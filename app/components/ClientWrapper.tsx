@@ -62,6 +62,43 @@ export default function ClientWrapper({
             
             if (!error) {
               setProfile(newProfile)
+              
+              // 골든래빗 도메인 사용자 자동 관리자 권한 부여 체크
+              const userEmail = session.user.email
+              if (userEmail && userEmail.toLowerCase().endsWith('@goldenrabbit.co.kr')) {
+                // 이미 관리자가 아닌 경우에만 권한 부여
+                if (newProfile.role !== 'admin') {
+                  try {
+                    // Server Action으로 관리자 권한 부여
+                    const { grantAdminRoleForGoldenRabbitDomain } = await import('../../lib/actions/auth-actions')
+                    const result = await grantAdminRoleForGoldenRabbitDomain(session.user.id, userEmail)
+                    
+                    if (result.success) {
+                      // 프로필을 업데이트된 정보로 갱신
+                      setProfile({ ...newProfile, role: 'admin' })
+                      console.log('골든래빗 직원 자동 관리자 권한 부여 완료:', userEmail)
+                    }
+                  } catch (adminError) {
+                    console.error('자동 관리자 권한 부여 실패:', adminError)
+                  }
+                }
+              }
+            } else if (error && error.code === 'PGRST116') {
+              // 프로필이 존재하지 않는 경우 - 골든래빗 도메인이면 관리자 권한으로 생성
+              const userEmail = session.user.email
+              if (userEmail && userEmail.toLowerCase().endsWith('@goldenrabbit.co.kr')) {
+                try {
+                  const { grantAdminRoleForGoldenRabbitDomain } = await import('../../lib/actions/auth-actions')
+                  const result = await grantAdminRoleForGoldenRabbitDomain(session.user.id, userEmail)
+                  
+                  if (result.success) {
+                    setProfile(result.data)
+                    console.log('골든래빗 직원 신규 관리자 계정 생성 완료:', userEmail)
+                  }
+                } catch (adminError) {
+                  console.error('골든래빗 직원 자동 관리자 계정 생성 실패:', adminError)
+                }
+              }
             }
           } catch (error) {
             // 프로필 조회 실패 시 무시

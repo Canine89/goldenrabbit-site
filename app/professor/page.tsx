@@ -387,8 +387,39 @@ export default function ProfessorPage() {
             </div>
           )}
 
-          {/* 신청 폼은 일반 사용자나 관리자에게만 표시 */}
-          {(!userProfile?.role || userProfile?.role === 'user' || userProfile?.role === 'admin') && (
+          {/* 골든래빗 직원 제한 안내 */}
+          {user && user.email && user.email.toLowerCase().endsWith('@goldenrabbit.co.kr') && userProfile?.role === 'admin' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-medium text-blue-900">골든래빗 직원 계정</h3>
+                </div>
+              </div>
+              <div className="text-blue-800 space-y-2">
+                <p>안녕하세요, 골든래빗 직원님!</p>
+                <p>골든래빗 직원은 자동으로 관리자 권한이 부여되며, 교수 자료실 신청이 불필요합니다.</p>
+                <p>모든 교수 자료실 콘텐츠에 바로 접근하실 수 있습니다.</p>
+                <div className="mt-4">
+                  <Link
+                    href="/professor/resources"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent text-sm font-medium rounded-md text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    교수 자료실 바로 가기
+                  </Link>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 신청 폼은 골든래빗 직원이 아닌 일반 사용자에게만 표시 */}
+          {user && (!user.email || !user.email.toLowerCase().endsWith('@goldenrabbit.co.kr')) && (!userProfile?.role || userProfile?.role === 'user') && (
             <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>

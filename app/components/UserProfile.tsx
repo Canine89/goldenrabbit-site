@@ -71,9 +71,24 @@ export default function UserProfile({ user, profile }: UserProfileProps) {
               {user.user_metadata?.full_name || user.email}
             </p>
             <p className="text-xs text-black">{user.email}</p>
-            {isAdmin && (
+            {isAdmin && user.email && user.email.toLowerCase().endsWith('@goldenrabbit.co.kr') && (
+              <div className="mt-1 space-y-1">
+                <span className="inline-block px-2 py-1 text-xs bg-blue-600 text-white rounded-full">
+                  골든래빗 직원
+                </span>
+                <span className="inline-block ml-1 px-2 py-1 text-xs bg-[#CFB074] text-white rounded-full">
+                  관리자
+                </span>
+              </div>
+            )}
+            {isAdmin && (!user.email || !user.email.toLowerCase().endsWith('@goldenrabbit.co.kr')) && (
               <span className="inline-block mt-1 px-2 py-1 text-xs bg-[#CFB074] text-white rounded-full">
                 관리자
+              </span>
+            )}
+            {profile?.role === 'professor' && (
+              <span className="inline-block mt-1 px-2 py-1 text-xs bg-green-600 text-white rounded-full">
+                교수회원
               </span>
             )}
           </div>
