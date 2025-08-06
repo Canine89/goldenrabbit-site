@@ -5,7 +5,7 @@ import { createSupabaseClient } from '../lib/supabase-client'
 import Header from './Header'
 import Footer from './Footer'
 import { CartProvider } from '../contexts/CartContext'
-import type { User } from '@supabase/supabase-js'
+import type { User, AuthChangeEvent, Session } from '@supabase/supabase-js'
 
 interface ClientWrapperProps {
   children: React.ReactNode
@@ -34,7 +34,7 @@ export default function ClientWrapper({
   useEffect(() => {
     // 인증 상태 변경 리스너
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: AuthChangeEvent, session: Session | null) => {
         if (event === 'SIGNED_OUT' || !session) {
           setUser(null)
           setProfile(null)

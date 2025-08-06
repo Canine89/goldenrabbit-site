@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 
-export default function OrderCompletePage() {
+// useSearchParams를 사용하는 컴포넌트를 분리
+function OrderCompleteContent() {
   const searchParams = useSearchParams()
   const [orderNumber, setOrderNumber] = useState<string>('')
   const [mounted, setMounted] = useState(false)
@@ -20,7 +21,14 @@ export default function OrderCompletePage() {
   }, [searchParams])
 
   if (!mounted) {
-    return null
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+          <p className="mt-2 text-gray-600">로딩 중...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -100,5 +108,26 @@ export default function OrderCompletePage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// 로딩 fallback 컴포넌트
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
+        <p className="mt-2 text-gray-600">주문 정보를 불러오는 중...</p>
+      </div>
+    </div>
+  )
+}
+
+// 메인 페이지 컴포넌트 (Suspense로 감쌈)
+export default function OrderCompletePage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <OrderCompleteContent />
+    </Suspense>
   )
 }

@@ -54,15 +54,21 @@ export async function extractArticleFromUrl(url: string): Promise<ActionResult<E
     // 웹 스크래핑으로 콘텐츠 추출 (타임아웃 및 에러 핸들링 강화)
     let response: Response
     try {
+      // AbortController를 사용한 타임아웃 구현
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10초 타임아웃
+      
       response = await fetch(url, {
-        timeout: 10000, // 10초 타임아웃
+        signal: controller.signal,
         headers: {
           'User-Agent': 'GoldenRabbit Site Migration Tool/1.0'
         }
       })
+      
+      clearTimeout(timeoutId)
     } catch (fetchError: any) {
-      if (fetchError.name === 'TimeoutError') {
-        return createErrorResponse('요청 시간 초과: 페이지 응답이 너무 늦습니다')
+      if (fetchError.name === 'AbortError') {
+        return createErrorResponse('요청 시간 초과: 페이지 응답이 너무 늦습니다 (10초)')
       }
       throw new Error(`페이지 요청 실패: ${fetchError.message}`)
     }

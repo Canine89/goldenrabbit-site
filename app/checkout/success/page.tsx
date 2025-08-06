@@ -1,12 +1,13 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Button from '../../components/ui/Button'
 import Card from '../../components/ui/Card'
 
-export default function PaymentSuccessPage() {
+// useSearchParams를 사용하는 컴포넌트를 분리
+function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isProcessing, setIsProcessing] = useState(true)
@@ -166,5 +167,26 @@ export default function PaymentSuccessPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+// 로딩 fallback 컴포넌트
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto"></div>
+        <p className="mt-2 text-gray-600">결제 정보를 불러오는 중...</p>
+      </div>
+    </div>
+  )
+}
+
+// 메인 페이지 컴포넌트 (Suspense로 감쌈)
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <PaymentSuccessContent />
+    </Suspense>
   )
 }
