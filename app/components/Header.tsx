@@ -26,6 +26,7 @@ export default function Header({ user, profile, loading }: HeaderProps) {
 
   // 사용자 role 확인
   const isProfessorOrAdmin = profile?.role === 'professor' || profile?.role === 'admin'
+  const isGoldenRabbitStaff = user?.email?.toLowerCase().endsWith('@goldenrabbit.co.kr')
 
   const navigationItems = [
     { name: '소개', href: '/about', external: false },
@@ -33,7 +34,10 @@ export default function Header({ user, profile, loading }: HeaderProps) {
     { name: '읽을거리', href: '/articles', external: false },
     { name: '토끼상점', href: '/rabbit-store', external: false },
     { name: '저자신청', href: '/author-apply', external: false },
-    { name: '교수회원 가입', href: '/professor', external: false },
+    // 골든래빗 직원이 아닌 경우에만 교수회원 가입 메뉴 표시
+    ...(!isGoldenRabbitStaff ? [
+      { name: '교수회원 가입', href: '/professor', external: false },
+    ] : []),
     ...(isProfessorOrAdmin ? [
       { name: '교수자료실', href: '/professor/resources', external: false },
     ] : []),

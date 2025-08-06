@@ -32,6 +32,13 @@ export default function ProfessorPage() {
     checkAuth()
   }, [])
 
+  // 골든래빗 직원은 교수 자료실로 자동 리다이렉트
+  useEffect(() => {
+    if (user && user.email && user.email.toLowerCase().endsWith('@goldenrabbit.co.kr') && userProfile?.role === 'admin') {
+      router.push('/professor/resources')
+    }
+  }, [user, userProfile, router])
+
   useEffect(() => {
     if (user) {
       fetchBooks()
